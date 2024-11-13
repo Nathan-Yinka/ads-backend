@@ -168,3 +168,4 @@ dump.rdb
 
 manipulation_temp_dir
 venv
+.env
