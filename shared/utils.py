@@ -58,3 +58,4 @@ def get_object_or_404_with_custom_message(model, error_message="Object not found
         return model.objects.get(**kwargs)
     except model.DoesNotExist:
         raise NotFound(detail=error_message)
+

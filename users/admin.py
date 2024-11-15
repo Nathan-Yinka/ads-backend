@@ -1,3 +1,43 @@
 from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.utils.translation import gettext_lazy as _
+from .models import User
 
-# Register your models here.
+
+class UserAdmin(BaseUserAdmin):
+    """
+    Admin interface for the custom User model.
+    """
+
+    # Fields to display in the list view
+    list_display = ("username", "email", "phone_number", "is_staff", "is_active", "date_joined")
+    list_filter = ("is_staff", "is_active", "gender")
+
+    # Fieldsets for the detail view
+    fieldsets = (
+        (None, {"fields": ("username", "email", "password")}),
+        (_("Personal Info"), {"fields": ("first_name", "last_name", "phone_number", "gender", "transactional_password", "invitation_code")}),
+        (_("Permissions"), {"fields": ("is_staff", "is_active", "is_superuser", "groups", "user_permissions")}),
+        (_("Important Dates"), {"fields": ("last_login", "date_joined")}),
+    )
+
+    # Fields for the add view
+    add_fieldsets = (
+        (None, {
+            "classes": ("wide",),
+            "fields": ("username", "email", "password1", "password2", "first_name", "last_name", "phone_number", "gender"),
+        }),
+    )
+
+    # Fields to search
+    search_fields = ("username", "email", "phone_number")
+
+    # Default ordering
+    ordering = ("date_joined",)
+
+    # Fields to use for editing
+    filter_horizontal = ("groups", "user_permissions")
+
+
+# Register the custom User model and its admin
+admin.site.register(User, UserAdmin)

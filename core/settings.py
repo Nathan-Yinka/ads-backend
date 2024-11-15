@@ -38,12 +38,14 @@ INSTALLED_APPS = [
 
     # 3rd party apps
     'rest_framework',
-    'djoser',
     'rest_framework_simplejwt',
+    'drf_yasg',
 
 
     # installed apps
     "users.apps.UsersConfig",
+    "administration.apps.AdministrationConfig",
+    "wallet.apps.WalletConfig",
 ]
 
 MIDDLEWARE = [
@@ -242,3 +244,33 @@ DATABASES = {
         'PORT': os.getenv('DATABASE_PORT'),
     }
 }
+
+
+"------------------------------ Swagger Settings --------------------------------"
+# swagger settings
+
+SWAGGER_SETTINGS = {
+   'SECURITY_DEFINITIONS': {
+      'Basic': {
+            'type': 'basic'
+      },
+      'Bearer': {
+            'type': 'apiKey',
+            'name': 'Authorization',
+            'in': 'header'
+      }
+   }
+}
+
+
+"-------------------- Auth User ---------------------------------------"
+AUTH_USER_MODEL = 'users.User'
+
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend', 
+    'core.backend.EmailOrUsernameBackend',
+]
+
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
