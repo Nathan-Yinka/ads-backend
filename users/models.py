@@ -70,6 +70,11 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True,
         verbose_name="Profile Picture"
     )
+    last_connection = models.DateTimeField(
+        blank=True, 
+        null=True, 
+        verbose_name="Last Connection"
+    )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)

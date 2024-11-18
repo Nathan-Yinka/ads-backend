@@ -46,6 +46,8 @@ INSTALLED_APPS = [
     "users.apps.UsersConfig",
     "administration.apps.AdministrationConfig",
     "wallet.apps.WalletConfig",
+    "packs.apps.PacksConfig",
+    "finances.apps.FinancesConfig",
 ]
 
 MIDDLEWARE = [
@@ -56,6 +58,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'users.middleware.UpdateLastConnectionMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'

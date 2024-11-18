@@ -4,6 +4,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import get_user_model
 
 from .models import Invitation
+from wallet.models import Wallet
 
 User = get_user_model()
 
