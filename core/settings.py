@@ -1,6 +1,9 @@
 from pathlib import Path
 from datetime import timedelta
 import os
+import cloudinary
+import cloudinary.uploader
+import cloudinary.api
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -40,6 +43,8 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework_simplejwt',
     'drf_yasg',
+    'cloudinary_storage',
+    'cloudinary',
 
 
     # installed apps
@@ -53,6 +58,7 @@ INSTALLED_APPS = [
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -144,10 +150,10 @@ REST_FRAMEWORK = {
     ),
 
     # Pagination settings: Use a custom pagination class to format paginated responses
-    'DEFAULT_PAGINATION_CLASS': 'shared.pagination.CustomPagination',
+    # 'DEFAULT_PAGINATION_CLASS': 'shared.pagination.CustomPagination',
 
     # Default number of items per page in paginated results
-    'PAGE_SIZE': 10,
+    # 'PAGE_SIZE': 10,
 
     # Exception handling: Use a custom exception handler for consistent error responses
     'EXCEPTION_HANDLER': 'shared.exception_handler.custom_exception_handler',
@@ -156,7 +162,7 @@ REST_FRAMEWORK = {
 
 "------------------------------- JSON Settings ------------------------------------------------------------------------"
 SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=5),
+    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=20),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": False,
     "BLACKLIST_AFTER_ROTATION": False,
@@ -278,3 +284,19 @@ AUTHENTICATION_BACKENDS = [
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+STATIC_URL = '/static/'
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+"---------------------------------------- CLOUDINARY_STORAGE -----------------------------------------------------"
+
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME'),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY'),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET'),
+}
+
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

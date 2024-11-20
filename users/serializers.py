@@ -5,6 +5,7 @@ from django.contrib.auth import get_user_model
 
 from .models import Invitation,InvitationCode
 from wallet.models import Wallet
+from wallet.serializers import WalletSerializer
 
 User = get_user_model()
 
@@ -111,9 +112,10 @@ class UserLoginSerializer(BaseAuthSerializer, serializers.ModelSerializer):
         return attrs
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    wallet = WalletSerializer.UserWalletSerializer(read_only=True) 
     class Meta:
         model = User
-        fields = ['username', 'email', 'phone_number', 'first_name', 'last_name', 'gender', 'date_joined', 'referral_code','profile_picture']
+        fields = ['username','email','phone_number','first_name','last_name','gender','referral_code','profile_picture','last_connection','is_active','date_joined','wallet']
         read_only_fields = ['date_joined','referral_code']
 
 class ChangePasswordSerializer(serializers.Serializer):

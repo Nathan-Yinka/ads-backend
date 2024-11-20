@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from packs.models import Pack
 
 User = get_user_model()
 
@@ -36,6 +37,13 @@ class Wallet(models.Model):
         decimal_places=2,
         default=0.00,
         verbose_name="Salary Earned"
+    )
+    package = models.ForeignKey(
+        Pack, 
+        null=True, 
+        blank=True, 
+        on_delete=models.SET_NULL,
+        related_name="wallet_pack"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -81,3 +89,24 @@ class Wallet(models.Model):
         self.on_hold -= amount
         self.balance += amount
         self.save()
+
+    def save(self, *args, **kwargs):
+        """
+        Override save method to assign a Pack based on the wallet balance.
+        """
+        # Fetch all packs ordered by their USD value in descending order
+        packs = Pack.objects.all().order_by('-usd_value')
+
+        # Find the most suitable pack based on the wallet balance
+        for pack in packs:
+            if self.balance >= pack.usd_value:
+                self.package = pack
+                break
+        else:
+            # No suitable pack found, fall back to the pack with the lowest amount
+            fallback_pack = Pack.objects.all().order_by('usd_value').first()
+            self.package = fallback_pack
+
+        super().save(*args, **kwargs)
+
+    

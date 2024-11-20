@@ -45,6 +45,7 @@ class PlayGameService:
         """
         Mark the current active game as played and update it with a rating and comment.
         """
+        
         game.played = True
         game.rating_score = rating_score
         game.comment = comment

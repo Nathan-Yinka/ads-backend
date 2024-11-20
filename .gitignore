@@ -137,7 +137,7 @@ dmypy.json
 
 
 
-staticfiles/
+
 media/
 *.bat
 openpose_pose_coco.prototxt
