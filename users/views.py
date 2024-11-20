@@ -1,4 +1,5 @@
 from rest_framework.viewsets import ViewSet
+from rest_framework_simplejwt.views import TokenRefreshView, TokenVerifyView
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated, AllowAny
@@ -7,13 +8,58 @@ from .serializers import (
     UserSignupSerializer,
     UserLoginSerializer,
     UserProfileSerializer,
-    ChangePasswordSerializer
+    ChangePasswordSerializer,
+    InvitationCodeSerializer
 )
+from rest_framework.decorators import api_view
+from drf_yasg.utils import swagger_auto_schema
+from drf_yasg import openapi
 from shared.utils import standard_response as Response
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from rest_framework_simplejwt.tokens import RefreshToken
+from core.permissions import IsSiteAdmin
+from .models import InvitationCode
+from rest_framework_simplejwt.exceptions import InvalidToken
 
+
+class CustomTokenRefreshView(TokenRefreshView):
+    """
+    Custom refresh token view to bypass unnecessary access token checks.
+    """
+
+    authentication_classes = [] 
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except InvalidToken as e:
+            return Response(
+                success=False,
+                message="Invalid or expired refresh token.",
+                errors=e.detail,
+                data=None,
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
+        except Exception as e:
+            return Response(
+                success=False,
+                message="Invalid or expired refresh token.",
+                errors=None,
+                data=None,
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
+
+        return Response(
+            success=True,
+            message="Token refreshed successfully.",
+            data=serializer.validated_data,
+            errors=None,
+            status_code=status.HTTP_200_OK
+        )
+    
 
 class UserAuthViewSet(ViewSet):
     """
@@ -155,4 +201,89 @@ class UserAuthViewSet(ViewSet):
             success=True,
             message="Password changed successfully.",
             status_code=status.HTTP_200_OK
+        )
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "refresh": openapi.Schema(type=openapi.TYPE_STRING, description="The refresh token to be used."),
+            },
+            required=["refresh"]
+        ),
+        responses={
+            200: openapi.Response(
+                description="New access token.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "access": openapi.Schema(type=openapi.TYPE_STRING, description="New access token."),
+                    },
+                )
+            )
+        },
+        operation_summary="Refresh Token",
+        operation_description="Use the refresh token to get a new access token."
+    )
+    @action(detail=False, methods=['post'], url_path='refresh-token', permission_classes=[AllowAny])
+    def refresh_token(self, request):
+        """
+        Handle token refreshing using the SimpleJWT TokenRefreshView logic.
+        """
+        return CustomTokenRefreshView.as_view()(request._request)
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            properties={
+                "token": openapi.Schema(type=openapi.TYPE_STRING, description="The token to verify."),
+            },
+            required=["token"]
+        ),
+        responses={
+            200: openapi.Response(
+                description="Token is valid.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "detail": openapi.Schema(type=openapi.TYPE_STRING, description="Token is valid."),
+                    },
+                )
+            )
+        },
+        operation_summary="Verify Token",
+        operation_description="Verify the validity of an access or refresh token."
+    )
+    @action(detail=False, methods=['post'], url_path='verify-token', permission_classes=[AllowAny])
+    def verify_token(self, request):
+        """
+        Handle token verification using the SimpleJWT TokenVerifyView logic.
+        """
+        return TokenVerifyView.as_view()(request._request)
+
+
+class InvitationCodeViewSet(ViewSet):
+    """
+    ViewSet for managing Invitation Codes.
+    """
+    permission_classes = [IsSiteAdmin]
+
+    @action(detail=False, methods=['post'], url_path='generate-code')
+    def generate_invitation_code(self, request):
+        """
+        Generate a new invitation code.
+        """
+        # Create a new InvitationCode instance
+        invitation_code = InvitationCode.objects.create()
+
+        # Serialize the new invitation code
+        serializer = InvitationCodeSerializer(invitation_code)
+
+        return Response(
+            {
+                "success": True,
+                "message": "Invitation code generated successfully.",
+                "data": serializer.data,
+            },
+           status.HTTP_201_CREATED,
         )

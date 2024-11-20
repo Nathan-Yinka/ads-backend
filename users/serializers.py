@@ -3,7 +3,7 @@ from django.contrib.auth import authenticate
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import get_user_model
 
-from .models import Invitation
+from .models import Invitation,InvitationCode
 from wallet.models import Wallet
 
 User = get_user_model()
@@ -22,10 +22,12 @@ class UserSignupSerializer(serializers.ModelSerializer):
     invitation_code = serializers.CharField(write_only=True, required=True)
     class Meta:
         model = User
-        fields = ['username', 'email', 'phone_number', 'password', 'first_name', 'last_name', 'gender', 'transactional_password','invitation_code']
+        fields = ['username', 'email', 'phone_number', 'password', 'first_name', 'last_name', 'gender', 'transactional_password','invitation_code','referral_code','profile_picture']
         extra_kwargs = {
             'password': {'write_only': True},
+            'transactional_password': {'write_only': True}
         }
+        read_only_fields = ['referral_code','profile_picture']
 
     def validate_email(self, value):
         """
@@ -48,11 +50,19 @@ class UserSignupSerializer(serializers.ModelSerializer):
         """
         Validate the invitation code.
         """
+        print("the code is here ",value)
         try:
             referrer = User.objects.get(referral_code=value) 
             return referrer
         except User.DoesNotExist:
-            raise serializers.ValidationError("Invalid invitation code.")
+            try:
+                code = InvitationCode.objects.get(invitation_code=value)
+                if code.is_used:
+                    raise serializers.ValidationError("The invitation code has been used")
+                else:
+                    return code
+            except InvitationCode.DoesNotExist:
+                raise serializers.ValidationError("Invalid invitation code.")
 
     def create(self, validated_data):
         """
@@ -60,13 +70,16 @@ class UserSignupSerializer(serializers.ModelSerializer):
         """
         password = validated_data.pop('password')
 
-        invitation_code = validated_data.pop('invitation_code')
-        referrer = self.validate_invitation_code(invitation_code)
-
+        referrer = validated_data.pop('invitation_code')
+        
         user = User.objects.create_user(password=password, **validated_data)
 
         # Create the invitation entry
-        Invitation.objects.create(referral=referrer, user=user)
+        if isinstance(referrer,User):
+            Invitation.objects.create(referral=referrer, user=user)
+        if isinstance(referrer, InvitationCode):
+            referrer.is_used = True
+            referrer.save()
 
         return user
 
@@ -133,3 +146,8 @@ class ChangePasswordSerializer(serializers.Serializer):
         new_password = self.validated_data['new_password']
         user.set_password(new_password)
         user.save()
+
+class InvitationCodeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InvitationCode
+        fields = ['id', 'invitation_code', 'is_used', 'created_at'] 

@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "wallet.apps.WalletConfig",
     "packs.apps.PacksConfig",
     "finances.apps.FinancesConfig",
+    "game.apps.GameConfig",
 ]
 
 MIDDLEWARE = [

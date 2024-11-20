@@ -13,7 +13,7 @@ class EmailOrUsernameBackend(ModelBackend):
         try:
             # Look up user by username or email
             user = User.objects.get(
-                Q(username=username) | Q(email_ixact=username)
+                Q(username=username) | Q(email__iexact=username)
             )
             # Validate the password
             if user.check_password(password) and self.user_can_authenticate(user):

@@ -2,7 +2,16 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.utils.translation import gettext_lazy as _
 from .models import User
+from wallet.models import Wallet
 
+class WalletInline(admin.StackedInline):
+    """
+    Inline admin for Wallet details.
+    """
+    model = Wallet
+    can_delete = False
+    verbose_name_plural = "Wallet"
+    # readonly_fields = ("balance", "on_hold")  # Example fields to make readonly
 
 class UserAdmin(BaseUserAdmin):
     """
@@ -16,10 +25,13 @@ class UserAdmin(BaseUserAdmin):
     # Fieldsets for the detail view
     fieldsets = (
         (None, {"fields": ("username", "email", "password")}),
-        (_("Personal Info"), {"fields": ("first_name", "last_name", "phone_number", "gender", "transactional_password", "invitation_code")}),
+        (_("Personal Info"), {"fields": ("first_name", "last_name", "phone_number", "gender", "transactional_password",)}),
         (_("Permissions"), {"fields": ("is_staff", "is_active", "is_superuser", "groups", "user_permissions")}),
         (_("Important Dates"), {"fields": ("last_login", "date_joined")}),
     )
+
+    # Make `date_joined` readonly
+    readonly_fields = ("date_joined",'referral_code')
 
     # Fields for the add view
     add_fieldsets = (
@@ -38,6 +50,8 @@ class UserAdmin(BaseUserAdmin):
     # Fields to use for editing
     filter_horizontal = ("groups", "user_permissions")
 
+    # Inline wallet details
+    inlines = [WalletInline]
 
 # Register the custom User model and its admin
 admin.site.register(User, UserAdmin)

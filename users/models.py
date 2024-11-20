@@ -98,7 +98,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     REQUIRED_FIELDS = ["email"]
 
     def save(self, *args, **kwargs):
-        if not self.invitation_code:
+        if not self.referral_code:
             self.referral_code = generate_invitation_code()
         super().save(*args, **kwargs)
 
@@ -127,3 +127,20 @@ class Invitation(models.Model):
 
     def __str__(self):
         return f"Invitation from {self.referral.username} to {self.user.username}"
+
+
+class InvitationCode(models.Model):
+    invitation_code = models.CharField(
+        max_length=6,
+        unique=False,
+        blank=False,
+        null=False,
+        editable=False
+    )
+    is_used = models.BooleanField(default=False)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def save(self, *args, **kwargs):
+        if not self.invitation_code:
+            self.invitation_code = generate_invitation_code()
+        super().save(*args, **kwargs)

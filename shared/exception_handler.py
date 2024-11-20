@@ -38,6 +38,16 @@ def custom_exception_handler(exc, context):
             errors=response.data,  # Validation errors are in response.data
             status_code=response.status_code
         )
+    
+    # Handle JWT token errors
+    elif response is not None and response.status_code == status.HTTP_401_UNAUTHORIZED:
+        if isinstance(exc.detail, dict) and exc.detail.get('code') == 'token_not_valid':
+            return standard_response(
+                success=False,
+                message="Your access token has expired",
+                errors=exc.detail,
+                status_code=status.HTTP_401_UNAUTHORIZED
+            )
 
     # Explicit handling for CustomException
     elif isinstance(exc, CustomException):

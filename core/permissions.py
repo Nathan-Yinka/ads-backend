@@ -1,4 +1,4 @@
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import BasePermission,SAFE_METHODS
 
 class IsSiteAdmin(BasePermission):
     """
@@ -32,3 +32,18 @@ class IsAdminOrReadOnlyForRegularUsers(BasePermission):
             return True
         # Regular users can only access their own deposits
         return obj.user == request.user
+    
+class IsAdminOrReadOnly(BasePermission):
+    """
+    Custom permission to allow only admin users to modify objects.
+    Read-only access is allowed for all other users.
+    """
+
+    def has_permission(self, request, view):
+        # Allow read-only access for safe methods (GET, HEAD, OPTIONS)
+        if request.method in SAFE_METHODS:
+            return True
+
+        # Allow full access only for admin users
+        return request.user and request.user.is_staff
+
