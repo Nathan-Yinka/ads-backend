@@ -137,7 +137,7 @@ dmypy.json
 
 
 
-staticfiles/
+
 media/
 *.bat
 openpose_pose_coco.prototxt
@@ -168,3 +168,4 @@ dump.rdb
 
 manipulation_temp_dir
 venv
+.env
