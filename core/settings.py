@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     'drf_yasg',
     'cloudinary_storage',
     'cloudinary',
+    "corsheaders",
 
 
     # installed apps
@@ -57,6 +58,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware', 
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -300,3 +302,35 @@ CLOUDINARY_STORAGE = {
 }
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+
+
+"----------------------------------------------- CORS SETTINGS  -----------------------------------------------"
+
+CORS_ALLOWS_ORIGINS = [
+    "http://localhost:5500",
+    "https://video-recording-api.onrender.com/videos/",
+    "https://helpmeoo.netlify.app/",
+    "https://malzahra.tech",
+    "http://localhost:5173",
+    "http://localhost:5173/",
+]
+
+CORS_ALLOW_METHODS = [
+    "GET",
+    "POST",
+    "PUT",
+    "PATCH",
+    "DELETE",
+    "OPTIONS",
+]
+
+CORS_ALLOW_HEADERS = [
+    "Accept",
+    "Content-Type",
+    "Authorization",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOW_ALL_ORIGINS = True
