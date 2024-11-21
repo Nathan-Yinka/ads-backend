@@ -17,12 +17,27 @@ schema_view = get_schema_view(
     permission_classes=(permissions.AllowAny,),
 )
 
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
+
+class HelloWorldView(APIView):
+    """
+    A simple API view to return 'Hello, World!'.
+    """
+    permission_classes = [AllowAny]
+
+    def get(self, request, *args, **kwargs):
+        return Response({"message": "Hello, World!"})
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     re_path(r'^swagger(?P<format>\.json|\.yaml)$', schema_view.without_ui(cache_timeout=0), name='schema-json'),
     path('', schema_view.with_ui('swagger', cache_timeout=0), name='schema-swagger-ui'),
     path('redoc/', schema_view.with_ui('redoc', cache_timeout=0), name='schema-redoc'),
 
+    path('hello-world/', HelloWorldView.as_view(), name='hello-world'),
+    
     path('site_admin/',include("administration.urls")),
     path('auth/',include("users.urls")),
     path('api/', include('packs.urls')),
