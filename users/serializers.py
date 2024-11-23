@@ -1,11 +1,14 @@
 from rest_framework import serializers
 from django.contrib.auth import authenticate
+from rest_framework.exceptions import NotFound
 from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import get_user_model
 
 from .models import Invitation,InvitationCode
 from wallet.models import Wallet
 from wallet.serializers import WalletSerializer
+from administration.serializers import SettingsSerializer
+from shared.helpers import get_settings
 
 
 User = get_user_model()
@@ -114,10 +117,19 @@ class UserLoginSerializer(BaseAuthSerializer, serializers.ModelSerializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     wallet = WalletSerializer.UserWalletSerializer(read_only=True) 
+    settings = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = User
-        fields = ['username','email','phone_number','first_name','last_name','gender','referral_code','profile_picture','last_connection','is_active','date_joined','wallet']
+        fields = ['username','email','phone_number','first_name','last_name','gender','referral_code','profile_picture','last_connection','is_active','date_joined','wallet','settings']
         read_only_fields = ['date_joined','referral_code']
+    
+    def get_settings(self,obj):
+        instance = get_settings()
+        if not instance:
+            raise NotFound(detail="Settings not found.")
+        serializer = SettingsSerializer(instance=instance)
+        return serializer.data
+
 
 class ChangePasswordSerializer(serializers.Serializer):
     current_password = serializers.CharField(write_only=True)
