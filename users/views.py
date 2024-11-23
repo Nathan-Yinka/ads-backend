@@ -11,6 +11,9 @@ from .serializers import (
     ChangePasswordSerializer,
     InvitationCodeSerializer
 )
+from administration.serializers import SettingsSerializer
+from rest_framework.exceptions import NotFound
+from shared.helpers import get_settings
 from rest_framework.decorators import api_view
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -261,6 +264,22 @@ class UserAuthViewSet(ViewSet):
         """
         return TokenVerifyView.as_view()(request._request)
 
+    @action(detail=False, methods=['get'], url_path='settings', permission_classes=[AllowAny])
+    def site_settings(self,request):
+        """
+        Return all the site settings create by the admin
+        """
+        instance = get_settings()
+        if not instance:
+            raise NotFound(detail="Settings not found.")
+        serializer = SettingsSerializer(instance=instance)
+        return Response(
+            success=True,
+            message="Settings Fetched successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+    
 
 class InvitationCodeViewSet(ViewSet):
     """
