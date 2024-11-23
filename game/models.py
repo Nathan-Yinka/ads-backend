@@ -46,31 +46,12 @@ class Game(models.Model):
     amount = models.DecimalField(max_digits=10, decimal_places=2,blank=True,null=True)
     commission = models.DecimalField(max_digits=10, decimal_places=2,blank=True,null=True)
     special_product = models.BooleanField(default=False)
+    game_number = models.IntegerField(null=True,blank=True)
+    pending = models.BooleanField(default=False)
     rating_no = models.CharField(max_length=11, unique=True, blank=True)  # Unique 11-digit number
     
     class Meta:
         ordering = ['-created_at']  # Default ordering by creation date (most recent first)
-
-    # def save(self, *args, **kwargs):
-    #     """
-    #     Override save method to ensure that a user can review a product only once per day.
-    #     """
-    #     # Calculate the start and end of the current day
-    #     start_of_day = now().replace(hour=0, minute=0, second=0, microsecond=0)
-    #     end_of_day = start_of_day + timedelta(days=1)
-
-    #     # Check if a review by this user for this product exists today
-    #     existing_review = Game.objects.filter(
-    #         product=self.product,
-    #         user=self.user,
-    #         created_at__gte=start_of_day,
-    #         created_at__lt=end_of_day
-    #     ).exists()
-
-    #     if existing_review:
-    #         raise ValueError("You can only review this product once per day.")
-
-    #     super().save(*args, **kwargs)
         
     def save(self, *args, **kwargs):
         """
@@ -98,15 +79,25 @@ class Game(models.Model):
             created_at__gte=start_of_day,
             created_at__lt=end_of_day
         ).count()
+    
+    @classmethod
+    def user_has_pending_game(cls,user):
+        '''
+        check if the user has pending game play 
+        '''
+        return cls.objects.filter(user=user, played=False,pending=True).exists()
 
     def __str__(self):
         return f"Game Review: {self.product.name} by {self.user.username}"
 
+# class PendingGame(models.Model):
+#     user = models.ForeignKey(User, on_delete=models.CASCADE)
+#     game = models.ForeignKey(Game,on_delete=models.CASCADE)
+#     is_active = models.BooleanField(default=True)
 
-# class UserGame(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='user_game')
-#     number
-#     is_reviewed = models.BooleanField(default=False)
-
-#     class Meta:
-#         unique_together = ('user', 'game')
+#     def confirm_game(self):
+#         if self.user.wallet.on_hold == 0:
+#             self.game.played = True
+#             self.game.save()
+#             self.is_active = False
+#             self.save()

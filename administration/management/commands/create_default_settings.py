@@ -18,7 +18,7 @@ class Command(BaseCommand):
                 online_chat_url="https://tawk.to/chat/example",
                 erc_address="0x028353a46...",
                 trc_address="TTXVm4X...",
-                minimum_balance_for_submissions=75.00,
+                minimum_balance_for_submissions=100.00,
                 timezone="America/Los_Angeles"
             )
             self.stdout.write(self.style.SUCCESS("Default settings instance created."))

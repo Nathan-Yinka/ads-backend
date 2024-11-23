@@ -7,6 +7,7 @@ from .models import Invitation,InvitationCode
 from wallet.models import Wallet
 from wallet.serializers import WalletSerializer
 
+
 User = get_user_model()
 
 

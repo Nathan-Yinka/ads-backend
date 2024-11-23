@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator, MaxValueValidator
 from packs.models import Pack
+from game.models import Game
 
 User = get_user_model()
 
@@ -38,6 +40,16 @@ class Wallet(models.Model):
         default=0.00,
         verbose_name="Salary Earned"
     )
+    credit_score = models.DecimalField(
+        max_digits=5,  # Adjusted for scores between 0.00 and 100.00
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Credit Score",
+        validators=[
+            MinValueValidator(0.00),
+            MaxValueValidator(100.00)
+        ]
+    )
     package = models.ForeignKey(
         Pack, 
         null=True, 
@@ -55,8 +67,13 @@ class Wallet(models.Model):
         """
         Add funds to the wallet balance.
         """
-        if amount <= 0:
-            raise ValueError("Credit amount must be greater than zero.")
+        if amount < 0:
+            raise ValueError("Credit amount must be positive.")
+        
+        if self.on_hold != 0:
+            amount += self.on_hold
+            self.on_hold = 0  # Reset on_hold after processing
+        
         self.balance += amount
         self.save()
 
@@ -64,12 +81,17 @@ class Wallet(models.Model):
         """
         Deduct funds from the wallet balance.
         """
-        if amount <= 0:
-            raise ValueError("Debit amount must be greater than zero.")
-        if self.balance < amount:
-            raise ValueError("Insufficient balance in the wallet.")
-        self.balance -= amount
+        if amount < 0:
+            raise ValueError("Debit amount must be positive.")
+        
+        if self.balance >= amount:
+            self.balance -= amount
+        else:
+            self.on_hold = self.balance - amount
+            self.balance = 0
+        
         self.save()
+
 
     def add_on_hold(self, amount):
         """
@@ -94,19 +116,27 @@ class Wallet(models.Model):
         """
         Override save method to assign a Pack based on the wallet balance.
         """
-        # Fetch all packs ordered by their USD value in descending order
-        packs = Pack.objects.all().order_by('-usd_value')
+        update_pack = Game.user_has_pending_game(self.user)
+        # Fetch all active packs ordered by their USD value in descending order
+        if not update_pack:
+            packs = Pack.objects.filter(is_active=True).order_by('-usd_value')
 
-        # Find the most suitable pack based on the wallet balance
-        for pack in packs:
-            if self.balance >= pack.usd_value:
-                self.package = pack
-                break
-        else:
-            # No suitable pack found, fall back to the pack with the lowest amount
-            fallback_pack = Pack.objects.all().order_by('usd_value').first()
-            self.package = fallback_pack
+            # Attempt to assign the highest suitable pack
+            assigned_pack = None
+            for pack in packs:
+                if self.balance >= pack.usd_value:
+                    assigned_pack = pack
+                    break
 
+            # Fall back to the pack with the lowest value if no suitable pack was found
+            if not assigned_pack:
+                assigned_pack = Pack.objects.filter(is_active=True).order_by('usd_value').first()
+
+            # Assign the selected pack to the instance
+            self.package = assigned_pack
+
+        # Call the parent save method
         super().save(*args, **kwargs)
 
-    
+
+        

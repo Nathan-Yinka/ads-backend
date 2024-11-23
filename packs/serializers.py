@@ -10,3 +10,8 @@ class PackSerializer(serializers.ModelSerializer):
             "created_at", "updated_at"
         ]
         read_only_fields = ["created_by", "created_at", "updated_at"]
+
+class PackProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Pack
+        fields = ["id","name","icon","usd_value"]

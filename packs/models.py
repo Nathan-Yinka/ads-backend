@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth import get_user_model
+from django.core.validators import MinValueValidator, MaxValueValidator
 
 User = get_user_model()
 
@@ -14,6 +15,16 @@ class Pack(models.Model):
     icon = models.ImageField(upload_to="pack_icons/", blank=False, null=False, verbose_name="Pack Icon")
     created_by = models.ForeignKey(
         User, on_delete=models.SET_NULL, null=True, related_name="created_packs", verbose_name="Created By"
+    )
+    profit_percentage = models.DecimalField(
+        max_digits=5,  # Adjusted for scores between 0.00 and 100.00
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Profit Per Mission",
+        validators=[
+            MinValueValidator(0.00),
+            MaxValueValidator(100.00)
+        ]
     )
     short_description = models.TextField(verbose_name="the short description for the pack")
     description = models.TextField(verbose_name="the long description for the pack")
