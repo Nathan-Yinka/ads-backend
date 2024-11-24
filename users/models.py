@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin, BaseUserManager
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import RegexValidator
 
 from shared.enums import GenderEnum
 from shared.helpers import generate_invitation_code
@@ -56,6 +57,13 @@ class User(AbstractBaseUser, PermissionsMixin):
         max_length=4,
         blank=False,
         null=False,
+        validators=[
+            RegexValidator(
+                regex=r'^\d{4}$',
+                message="The transactional password must be exactly 4 digits.",
+                code='invalid_length'
+            )
+        ]
     )
     referral_code = models.CharField(
         max_length=6,

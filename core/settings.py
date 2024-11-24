@@ -279,7 +279,7 @@ DATABASES = {
 #     }
 # }
 
-print(DATABASES["default"])
+# print(DATABASES["default"])
 
 
 "------------------------------ Swagger Settings --------------------------------"

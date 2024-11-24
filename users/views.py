@@ -9,6 +9,7 @@ from .serializers import (
     UserLoginSerializer,
     UserProfileSerializer,
     ChangePasswordSerializer,
+    ChangeTransactionalPasswordSerializer,
     InvitationCodeSerializer
 )
 from administration.serializers import SettingsSerializer
@@ -205,6 +206,47 @@ class UserAuthViewSet(ViewSet):
             message="Password changed successfully.",
             status_code=status.HTTP_200_OK
         )
+    
+    @swagger_auto_schema(
+        operation_description="Change the transactional password for the authenticated user.",
+        operation_summary="Change transactional Password",
+        request_body=ChangeTransactionalPasswordSerializer,  # Attach the request body schema
+        responses={
+            200: openapi.Response(
+                description="Transactional password changed successfully.",
+                examples={
+                    "application/json": {
+                        "success": True,
+                        "message": "Transaction Password changed successfully.",
+                    }
+                },
+            ),
+            400: openapi.Response(
+                description="Validation error.",
+                examples={
+                    "application/json": {
+                        "success": False,
+                        "message": "Validation failed.",
+                        "data": {
+                            "current_password": ["This field is required."],
+                            "new_password": ["This field is required."],
+                        },
+                    }
+                },
+            ),
+        },
+    )
+    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
+    def user_change_transactional_password(self, request):
+        serializer = ChangeTransactionalPasswordSerializer(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            success=True,
+            message="Transaction Password changed successfully.",
+            status_code=status.HTTP_200_OK,
+        )
+    
 
     @swagger_auto_schema(
         request_body=openapi.Schema(

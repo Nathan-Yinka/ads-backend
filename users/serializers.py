@@ -43,6 +43,14 @@ class UserSignupSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"email": "A user with this email already exists."})
         return email
 
+    def validate_transactional_password(self,value):
+        if len(value) < 4:
+            raise serializers.ValidationError("The transactional password must be exactly 4 characters long")
+        if len(value) != 4:
+            raise serializers.ValidationError("The transactional password must be exactly 4 characters long")
+        return value
+
+
     def validate_username(self, value):
         """
         Validate the username for uniqueness.
@@ -173,6 +181,40 @@ class ChangePasswordSerializer(serializers.Serializer):
         new_password = self.validated_data['new_password']
         user.set_password(new_password)
         user.save()
+
+
+class ChangeTransactionalPasswordSerializer(serializers.Serializer):
+    current_password = serializers.CharField(write_only=True)
+    new_password = serializers.CharField(write_only=True)
+
+    def validate_current_password(self, value):
+        """
+        Validate the current password.
+        """
+        user = self.context['request'].user
+        if not user.check_transactional_password(value):
+            raise serializers.ValidationError("Current password is incorrect.")
+        return value
+    def validate_new_password(self, value):
+        """
+        Validate the new password (add strength checks if needed).
+        """
+        # Example of a custom password strength check
+        if len(value) < 4:
+            raise serializers.ValidationError("The new password must be at least 4 characters long.")
+        if len(value) != 4:
+            raise serializers.ValidationError("The transactional password must be exactly 4 characters long")
+        return value
+
+    def save(self):
+        """
+        Update the user's password.
+        """
+        user = self.context['request'].user
+        new_password = self.validated_data['new_password']
+        user.transactional_password = new_password
+        user.save()
+
 
 class InvitationCodeSerializer(serializers.ModelSerializer):
     class Meta:
