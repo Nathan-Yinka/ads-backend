@@ -23,7 +23,7 @@ class Notification(models.Model):
         return f"Notification for {self.user.username}: {self.title}"
 
     class Meta:
-        ordering = ['-is_read', '-created_at']
+        ordering = ['is_read', '-created_at']
 
     @classmethod
     def mark_all_user_as_read(cls, user):

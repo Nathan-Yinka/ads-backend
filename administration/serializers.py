@@ -3,6 +3,7 @@ from .models import Settings
 from finances.models import Deposit
 from shared.helpers import get_settings
 from users.models import Invitation
+from shared.helpers import create_user_notification
 
 class SettingsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -150,7 +151,7 @@ class DepositSerializer:
                     # Mark the bonus as received
                     invitation.received_bonus = True
                     invitation.save()
-
+                    create_user_notification(referral,"Referral Bonus",f"You have recieved a referral bonus of {bonus_amount:.2f}, Your current balance is {referral.wallet.balance}")
                     print(f"Referral bonus of {bonus_amount:.2f} awarded to user {referral.username} (ID: {referral.id}).")
             except Invitation.DoesNotExist:
                 # Handle case where no invitation is found

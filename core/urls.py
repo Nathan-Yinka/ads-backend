@@ -42,5 +42,6 @@ urlpatterns = [
     path('auth/',include("users.urls")),
     path('api/', include('packs.urls')),
     path('api/', include('finances.urls')),
-    path("api/",include("game.urls"))
+    path("api/",include("game.urls")),
+    path("api/",include("notification.urls")),
 ]

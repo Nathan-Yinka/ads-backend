@@ -25,6 +25,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from core.permissions import IsSiteAdmin
 from .models import InvitationCode
 from rest_framework_simplejwt.exceptions import InvalidToken
+from shared.helpers import create_user_notification
 
 
 class CustomTokenRefreshView(TokenRefreshView):
@@ -183,6 +184,7 @@ class UserAuthViewSet(ViewSet):
         serializer = UserProfileSerializer(request.user, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        create_user_notification(request.user,"Profile Update","Your Profile was updated successfully")
         return Response(
             success=True,
             message="Profile updated successfully.",
@@ -201,6 +203,7 @@ class UserAuthViewSet(ViewSet):
         serializer = ChangePasswordSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        create_user_notification(request.user,"Password Changed", "Your account password has successfully been updated")
         return Response(
             success=True,
             message="Password changed successfully.",
@@ -241,6 +244,7 @@ class UserAuthViewSet(ViewSet):
         serializer = ChangeTransactionalPasswordSerializer(data=request.data, context={'request': request})
         serializer.is_valid(raise_exception=True)
         serializer.save()
+        create_user_notification(request.user,"Transactional Password Changed", "Your transaction password has successfully been updated")
         return Response(
             success=True,
             message="Transaction Password changed successfully.",

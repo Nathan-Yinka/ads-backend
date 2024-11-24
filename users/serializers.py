@@ -63,7 +63,7 @@ class UserSignupSerializer(serializers.ModelSerializer):
         """
         Validate the invitation code.
         """
-        print("the code is here ",value)
+        # print("the code is here ",value)
         try:
             referrer = User.objects.get(referral_code=value) 
             return referrer

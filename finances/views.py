@@ -83,7 +83,7 @@ class DepositViewSet(StandardResponseMixin, ViewSet):
         serializer = DepositSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=request.user, status="Pending")
-        message = f"You made a deposit of {serializer['amount']} USD"
+        message = f"You made a deposit of {serializer.validated_data['amount']} USD"
         create_user_notification(
             user=request.user,
             title="Deposit",
@@ -238,7 +238,7 @@ class WithdrawalViewSet(StandardResponseMixin, ViewSet):
         message = f"You made a withdrawal request of  {serializer.validated_data['amount']} USD, New Balance : {request.user.wallet.balance} USD"
         create_user_notification(
             user=request.user,
-            title="Deposit",
+            title="Withdrawal",
             message=message
             )
         # Custom standard response
