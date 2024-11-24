@@ -13,7 +13,7 @@ class IsSiteAdmin(BasePermission):
 from rest_framework.permissions import BasePermission
 
 
-class IsAdminOrReadOnlyForRegularUsers(BasePermission):
+class IsAdminOrReadCreateOnlyForRegularUsers(BasePermission):
     """
     Custom permission:
     - Admin users have full access.

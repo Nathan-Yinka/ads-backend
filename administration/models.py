@@ -1,4 +1,7 @@
 from django.db import models
+from cloudinary_storage.storage import MediaCloudinaryStorage
+from cloudinary.models import CloudinaryField
+import cloudinary
 
 class Settings(models.Model):
     """
@@ -16,6 +19,13 @@ class Settings(models.Model):
     erc_address = models.CharField(max_length=100, blank=True, null=True, verbose_name="ERC Address")
     trc_address = models.CharField(max_length=100, blank=True, null=True, verbose_name="TRC Address")
     minimum_balance_for_submissions = models.DecimalField(max_digits=10, decimal_places=2, default=0.00, verbose_name="Minimum Balance for Submissions")
+    video = CloudinaryField(
+        "video", 
+        resource_type="video",
+        folder="videos/", 
+        blank=True,
+        null=True
+    )
     timezone = models.CharField(max_length=50, default="UTC", verbose_name="Time Zone")
 
     class Meta:

@@ -120,7 +120,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     settings = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = User
-        fields = ['username','email','phone_number','first_name','last_name','gender','referral_code','profile_picture','last_connection','is_active','date_joined','wallet','settings']
+        fields = ['id','username','email','phone_number','first_name','last_name','gender','referral_code','profile_picture','last_connection','is_active','date_joined','wallet','settings']
         read_only_fields = ['date_joined','referral_code']
     
     def get_settings(self,obj):
@@ -129,6 +129,18 @@ class UserProfileSerializer(serializers.ModelSerializer):
             raise NotFound(detail="Settings not found.")
         serializer = SettingsSerializer(instance=instance)
         return serializer.data
+
+class UserPartialSerilzer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id"
+            "username",
+            "email",
+            "last_name",
+            "first_name",
+            "is_active"
+        ]
 
 
 class ChangePasswordSerializer(serializers.Serializer):

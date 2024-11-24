@@ -7,7 +7,21 @@ from users.models import Invitation
 class SettingsSerializer(serializers.ModelSerializer):
     class Meta:
         model = Settings
-        fields = "__all__"
+        exclude = ['id']
+
+
+class SettingsVideoSerializer(serializers.ModelSerializer):
+    """
+    Serializer for updating the video field in the Settings model.
+    """
+    class Meta:
+        model = Settings
+        fields = ['video']  # Include only the video field
+
+    def validate_video(self, value):
+        if not value.name.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):
+            raise serializers.ValidationError("The uploaded file is not a valid video format.")
+        return value
 
 class DepositSerializer:
     """
