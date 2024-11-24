@@ -87,7 +87,6 @@ class PlayGameService:
         return True, ""
 
 
-
     def assign_next_game(self):
         """
         Assign the next game for the user with one or two products they haven't played today.
@@ -110,17 +109,17 @@ class PlayGameService:
         if not available_products.exists():
             return None, "No new submission available for you."
 
-        # Randomly select 1 or 2 products
+        # Randomly select 1 or 2 products from the available list
         product_count = random.choice([1, 2])
-        selected_products = available_products[:product_count]
+        selected_products = random.sample(list(available_products), min(product_count, len(available_products)))
 
         # Calculate the total amount and commission
         total_amount = sum(product.price for product in selected_products)
         if self.wallet.package:
             commission_percentage = self.wallet.package.profit_percentage
         else:
-            commission_percentage = 0.2
-          # Example: 10%
+            commission_percentage = 0.5  # Default to 20% if no package is available
+
         commission = (total_amount * commission_percentage) / 100
 
         # Create a new game instance

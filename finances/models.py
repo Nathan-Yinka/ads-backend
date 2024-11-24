@@ -1,7 +1,8 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 import uuid
-
+from game.models import Game
+from django.utils.timezone import now, timedelta
 User = get_user_model()
 
 class Deposit(models.Model):
@@ -109,3 +110,42 @@ class Withdrawal(models.Model):
         if not self.transaction_reference:
             self.transaction_reference = str(uuid.uuid4()).replace('-', '').upper()[:12] 
         super(Withdrawal, self).save(*args, **kwargs)
+
+    @classmethod
+    def can_withdraw(cls,user,amount,transactional_password):
+        """
+        Check if the user can withdraw the specified amount.
+        """
+        wallet = user.wallet
+        balance = wallet.balance
+        pack = wallet.package
+        number_of_play = Game.count_games_played_today(user)
+        total_play = pack.daily_missions
+        max_no_of_withdrawal = pack.daily_withdrawals
+        if balance < amount:
+            return False, f"Insufficient balance, You balance is {balance}"
+        if number_of_play < total_play:
+            return False, (
+                f"Complete all {total_play} submission{'s' if total_play > 1 else ''} "
+                f"before you are able to withdraw."
+            )
+        total_withdrawal_for_today = cls.total_count_of_today_withdrawal(user)
+        if total_withdrawal_for_today >= max_no_of_withdrawal:
+            return False, f"You have reached the maximum number of withdrawal for today"
+        if not user.check_transactional_password(transactional_password):
+            return False, "Incorrecct transactional password"
+        return True,""
+
+    
+    @classmethod
+    def total_count_of_today_withdrawal(cls,user):
+        # Calculate the start and end of the current day
+        start_of_day = now().replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day = start_of_day + timedelta(days=1)
+
+        # Count games played by the user today
+        return cls.objects.filter(
+            user=user,
+            created_at__gte=start_of_day,
+            created_at__lt=end_of_day
+        ).count()

@@ -102,6 +102,9 @@ class User(AbstractBaseUser, PermissionsMixin):
             self.referral_code = generate_invitation_code()
         super().save(*args, **kwargs)
 
+    def check_transactional_password(self,transactional_password):
+        return self.transactional_password == transactional_password
+
     def __str__(self):
         return self.username
 

@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Deposit,PaymentMethod
+from .models import Deposit,PaymentMethod,Withdrawal
 from users.serializers import UserPartialSerilzer
 
 class DepositSerializer(serializers.ModelSerializer):
@@ -11,7 +11,7 @@ class DepositSerializer(serializers.ModelSerializer):
             "id", "user", "amount", "date_time", "status", "screenshot", 
             "created_at", "updated_at"
         ]
-        read_only_fields = ["user", "created_at", "updated_at"]
+        read_only_fields = ["user", "created_at", "updated_at",'status']
 
 class PaymentMethodSerializer(serializers.ModelSerializer):
     """
@@ -41,3 +41,40 @@ class PaymentMethodSerializer(serializers.ModelSerializer):
             instance.save()
 
         return instance
+
+
+class WithdrawalSerializer:
+
+    class MakeWithdrawal(serializers.ModelSerializer):
+        amount = serializers.DecimalField(max_digits=10, decimal_places=2)
+        password = serializers.CharField(write_only=True)  # Password should not be exposed in the response
+
+        class Meta:
+            model = Withdrawal
+            fields = ["amount", "password"]
+
+        def validate(self, data):
+            data = super().validate(data)  # Ensure base validation logic is executed
+            user = self.context['request'].user  # Access request.user from context
+            
+            if not user.is_authenticated:
+                raise serializers.ValidationError("User is not authenticated.")
+
+            # Call the can_withdraw method on the Withdrawal model
+            can_withdraw, error = Withdrawal.can_withdraw(user, data["amount"], data["password"])
+            
+            if not can_withdraw:
+                raise serializers.ValidationError({"error":error})
+            
+            user_wallet = user.wallet
+            if user_wallet:
+                user_wallet.debit(data['amount'])
+
+            data.pop("password","")
+            return data
+        
+    class ListWithdrawals(serializers.ModelSerializer):
+        payment_method = PaymentMethodSerializer(read_only=True)
+        class Meta:
+            model = Withdrawal
+            fields = "__all__"

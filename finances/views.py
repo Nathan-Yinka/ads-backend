@@ -5,9 +5,10 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework.decorators import action
 
-from .models import Deposit,PaymentMethod
-from .serializers import DepositSerializer,PaymentMethodSerializer
+from .models import Deposit,PaymentMethod,Withdrawal
+from .serializers import DepositSerializer,PaymentMethodSerializer,WithdrawalSerializer
 from core.permissions import IsAdminOrReadCreateOnlyForRegularUsers
 from shared.mixins import StandardResponseMixin
 
@@ -38,6 +39,41 @@ class DepositViewSet(StandardResponseMixin, ViewSet):
             data=serializer.data,
             status_code=status.HTTP_200_OK,
         )
+
+    @swagger_auto_schema(
+        operation_description="Create a deposit for the authenticated user.",
+        request_body=DepositSerializer,  # Use the DepositSerializer for the request body
+        responses={
+            201: openapi.Response(
+                description="Deposit created successfully.",
+                examples={
+                    "application/json": {
+                        "success": True,
+                        "message": "Deposit created successfully.",
+                        "data": {
+                            "id": 1,
+                            "amount": "100.00",
+                            "user": "username",
+                            "status": "Pending",
+                            "created_at": "2024-11-24T12:00:00Z",
+                        },
+                    }
+                },
+            ),
+            400: openapi.Response(
+                description="Validation error.",
+                examples={
+                    "application/json": {
+                        "success": False,
+                        "message": "Validation failed.",
+                        "data": {
+                            "amount": ["This field is required."],
+                        },
+                    }
+                },
+            ),
+        },
+    )
 
     def create(self, request):
         """
@@ -136,3 +172,75 @@ class PaymentMethodViewSet(StandardResponseMixin, ViewSet):
             status_code=status.HTTP_201_CREATED if created else status.HTTP_200_OK,
         )
     
+class WithdrawalViewSet(StandardResponseMixin, ViewSet):
+
+    permission_classes = [IsAuthenticated]
+
+    @swagger_auto_schema(
+        operation_description="Create a withdrawal request for a user.",
+        request_body=WithdrawalSerializer.MakeWithdrawal,
+        responses={
+            201: openapi.Response(
+                description="Withdrawal request successfully created.",
+                examples={
+                    "application/json": {
+                        "success": True,
+                        "message": "Withdrawal Request Made Successfully.",
+                        "data": {
+                            "amount": "100.00",
+                        },
+                    }
+                },
+            ),
+            400: openapi.Response(
+                description="Validation failed.",
+                examples={
+                    "application/json": {
+                        "success": False,
+                        "message": "Validation failed.",
+                        "data": {
+                            "amount": ["This field is required."],
+                            "password": ["This field is required."]
+                        },
+                    }
+                },
+            ),
+        },
+    )
+    @action(detail=False, methods=['post'])
+    def make_withdrawal(self, request):
+        """
+        Handle withdrawal requests.
+        """
+        serializer = WithdrawalSerializer.MakeWithdrawal(data=request.data, context={'request': request})
+        serializer.is_valid(raise_exception=True)
+        # Process the withdrawal logic here
+        amount = serializer.validated_data['amount']
+        
+        # Assuming the user has a `payment_method` attribute
+        payment_method = request.user.payment_method
+
+        # Create the withdrawal record
+        Withdrawal.objects.create(user=request.user, amount=amount, payment_method=payment_method)
+
+        # Custom standard response
+        return self.standard_response(
+            success=True,
+            message="Withdrawal Request Made Successfully.",
+            data=serializer.validated_data,
+            status_code=status.HTTP_201_CREATED,
+        )
+
+    @action(detail=False, methods=['get'])
+    def withdrawal_history(self,request):
+        """
+        Retrieve the withdrawal history for the authenticated user.
+        """
+        withdrawals = Withdrawal.objects.filter(user=request.user)
+        serializer = WithdrawalSerializer.ListWithdrawals(withdrawals, many=True)
+        return self.standard_response(
+            success=True,
+            message="Withdrawal History Fetched succesfully.",
+            data=serializer.data,
+            status_code=status.HTTP_201_CREATED,
+        )

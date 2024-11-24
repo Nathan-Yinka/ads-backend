@@ -134,7 +134,7 @@ class UserPartialSerilzer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = [
-            "id"
+            "id",
             "username",
             "email",
             "last_name",
