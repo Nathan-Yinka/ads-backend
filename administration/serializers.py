@@ -9,14 +9,35 @@ class SettingsSerializer(serializers.ModelSerializer):
         model = Settings
         exclude = ['id']
 
+    def to_representation(self, instance):
+        """
+        Customize the representation of the video field to return the .url.
+        """
+        representation = super().to_representation(instance)
+        # Replace the video field with its URL
+        if instance.video:
+            representation['video'] = instance.video.url
+        return representation
+
 
 class SettingsVideoSerializer(serializers.ModelSerializer):
     """
     Serializer for updating the video field in the Settings model.
     """
+    
     class Meta:
         model = Settings
         fields = ['video']  # Include only the video field
+
+    def to_representation(self, instance):
+        """
+        Customize the representation of the video field to return the .url.
+        """
+        representation = super().to_representation(instance)
+        # Replace the video field with its URL
+        if instance.video:
+            representation['video'] = instance.video.url
+        return representation
 
     def validate_video(self, value):
         if not value.name.lower().endswith(('.mp4', '.avi', '.mov', '.mkv')):

@@ -4,6 +4,7 @@ from .models import Wallet
 from administration.models import Settings
 from django.contrib.auth import get_user_model
 from shared.helpers import get_settings
+from shared.helpers import create_user_notification
 
 User = get_user_model()
 
@@ -25,6 +26,9 @@ def create_user_wallet(sender, instance, created, **kwargs):
         try:
             # Create the wallet with the signup bonus
             Wallet.objects.create(user=instance, balance=signup_bonus)
+            # Create a notification for the user
+            if signup_bonus > 0:
+                create_user_notification(instance, "Signup Bonus", f"Successful registration! You have received a signup bonus of {signup_bonus} USD")
         except:
             print("An error occured trying to create user wallet")
             pass

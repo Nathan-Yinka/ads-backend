@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "packs.apps.PacksConfig",
     "finances.apps.FinancesConfig",
     "game.apps.GameConfig",
+    "notification.apps.NotificationConfig",
 ]
 
 MIDDLEWARE = [

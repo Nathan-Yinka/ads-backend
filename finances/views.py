@@ -11,6 +11,7 @@ from .models import Deposit,PaymentMethod,Withdrawal
 from .serializers import DepositSerializer,PaymentMethodSerializer,WithdrawalSerializer
 from core.permissions import IsAdminOrReadCreateOnlyForRegularUsers
 from shared.mixins import StandardResponseMixin
+from shared.helpers import create_user_notification
 
 
 class DepositViewSet(StandardResponseMixin, ViewSet):
@@ -82,7 +83,12 @@ class DepositViewSet(StandardResponseMixin, ViewSet):
         serializer = DepositSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save(user=request.user, status="Pending")
-        
+        message = f"You made a deposit of {serializer['amount']} USD"
+        create_user_notification(
+            user=request.user,
+            title="Deposit",
+            message=message
+            )
         return self.standard_response(
             success=True,
             message="Deposit created successfully.",
@@ -164,6 +170,13 @@ class PaymentMethodViewSet(StandardResponseMixin, ViewSet):
         serializer.is_valid(raise_exception=True)
         serializer.save()
 
+        message = f"You updated your payment method details"
+        create_user_notification(
+            user=request.user,
+            title="Payment method",
+            message=message
+            )
+
         message = "Payment method created successfully." if created else "Payment method updated successfully."
         return self.standard_response(
             success=True,
@@ -222,7 +235,12 @@ class WithdrawalViewSet(StandardResponseMixin, ViewSet):
 
         # Create the withdrawal record
         Withdrawal.objects.create(user=request.user, amount=amount, payment_method=payment_method)
-
+        message = f"You made a withdrawal request of  {serializer.validated_data['amount']} USD, New Balance : {request.user.wallet.balance} USD"
+        create_user_notification(
+            user=request.user,
+            title="Deposit",
+            message=message
+            )
         # Custom standard response
         return self.standard_response(
             success=True,
