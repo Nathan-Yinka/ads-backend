@@ -39,6 +39,7 @@ urlpatterns = [
     path('hello-world/', HelloWorldView.as_view(), name='hello-world'),
     
     path('site_admin/',include("administration.urls")),
+    path('site_admin/',include("users.admin_urls")),
     path('auth/',include("users.urls")),
     path('api/', include('packs.urls')),
     path('api/', include('finances.urls')),

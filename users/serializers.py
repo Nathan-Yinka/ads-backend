@@ -9,6 +9,12 @@ from wallet.models import Wallet
 from wallet.serializers import WalletSerializer
 from administration.serializers import SettingsSerializer
 from shared.helpers import get_settings
+from game.models import Product,Game
+from django.utils.timezone import now, timedelta
+from django.db.models import Q
+from django.db.models.functions import ExtractMonth, ExtractYear
+from django.db.models import Count
+
 
 
 User = get_user_model()
@@ -220,3 +226,152 @@ class InvitationCodeSerializer(serializers.ModelSerializer):
     class Meta:
         model = InvitationCode
         fields = ['id', 'invitation_code', 'is_used', 'created_at'] 
+
+
+
+# ----------------------------------- Admin Serializers -----------------------------------------
+
+class DashboardSerializer(serializers.Serializer):
+    """
+    Serializer for admin dashboard data.
+    """
+    total_users = serializers.SerializerMethodField()
+    active_products = serializers.SerializerMethodField()
+    total_submissions = serializers.SerializerMethodField()
+    total_users_login_today = serializers.SerializerMethodField()
+    user_registrations_per_month = serializers.SerializerMethodField()
+    total_submissions_per_month = serializers.SerializerMethodField()
+
+    def get_total_users(self, obj):
+        # Replace with actual logic to calculate total users
+        return User.objects.users().filter(is_active=True).count()
+
+    def get_active_products(self, obj):
+        # Replace with actual logic to calculate active users
+        return Product.objects.count()
+
+    def get_total_submissions(self, obj):
+        # Calculate the start of today
+        start_of_today = now().replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_today = start_of_today + timedelta(days=1)
+
+        # Query to count games created today with `played=True` or `pending=True`
+        count = Game.objects.filter(
+            updated_at__gte=start_of_today,  # From start of today
+            updated_at__lt=end_of_today,    # Until the end of today
+        ).filter(
+            Q(played=True) | Q(pending=True)  # Either played or pending
+        ).count()
+        return count
+    
+    def get_total_users_login_today(self, obj):
+        """
+        Count the total number of users who logged in today based on their `last_connection` field.
+        """
+        # Calculate the start and end of today
+        start_of_today = now().replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_today = start_of_today + timedelta(days=1)
+
+        # Filter users whose last_connection is within today's range
+        return User.objects.filter(
+            last_connection__gte=start_of_today,
+            last_connection__lt=end_of_today,
+        ).count()
+
+    def get_user_registrations_per_month(self, obj):
+        """
+        Get the number of users registered per month for the current year,
+        up to the current month.
+        """
+        current_year = now().year
+        current_month = now().month
+
+        # Aggregate data grouped by month
+        registrations = User.objects.filter(
+            date_joined__year=current_year
+        ).annotate(
+            month=ExtractMonth('date_joined')  # Extract month from date_joined
+        ).values(
+            'month'
+        ).annotate(
+            count=Count('id')  # Count users for each month
+        ).order_by('month')
+
+        # Initialize all months up to the current month with 0
+        result = {month: 0 for month in range(1, current_month + 1)}
+
+        # Update the result with actual counts
+        for reg in registrations:
+            if reg['month'] <= current_month:  # Ensure only months up to the current month are included
+                result[reg['month']] = reg['count']
+
+        return result
+        
+    def get_total_submissions_per_month(self, obj):
+        """
+        Get the total number of submissions per month for the current year.
+        Includes submissions where played=True or pending=True.
+        """
+        current_year = now().year
+        current_month = now().month
+
+        # Query for submissions grouped by month
+        submissions = Game.objects.filter(
+            updated_at__year=current_year,  # Filter by current year
+        ).filter(
+            Q(played=True) | Q(pending=True)  # Filter for played or pending
+        ).annotate(
+            month=ExtractMonth('updated_at')  # Group by month
+        ).values(
+            'month'
+        ).annotate(
+            count=Count('id')  # Count games for each month
+        ).order_by('month')
+
+        # Format the result for only the months up to the current month
+        result = {month: 0 for month in range(1, current_month + 1)}
+        for submission in submissions:
+            if submission['month'] <= current_month:  # Ensure only months up to the current month are included
+                result[submission['month']] = submission['count']
+
+        return result
+
+
+class AdminAuthSerializer:
+
+    class Login(UserLoginSerializer):
+        """
+        Serializer for admin login, ensuring only staff users can authenticate.
+        """
+
+        def validate(self, attrs):
+            # Call the base class validate method to perform the standard validation
+            attrs = super().validate(attrs)
+
+            # Additional validation for admin users
+            user = attrs.get('user')
+            if not user.is_staff:
+                raise serializers.ValidationError({"username_or_email": "Access restricted to admin users only."})
+
+            return attrs
+    
+    class Write(serializers.ModelSerializer):
+        """
+        Serializer for creating or updating admin users.
+        """
+
+        class Meta:
+            model = User
+            fields = ['id', 'username', 'email', 'is_staff', 'is_active','phone_number','first_name','last_name','profile_picture']
+            read_only_fields = ['is_staff', 'is_active']
+            ref_name = "Admin User - Write"
+
+    class List(Write):
+        dashboard = DashboardSerializer(source='*')
+        """
+        Serializer for listing admin users.
+        """
+        class Meta:
+            model = User
+            fields = ['id', 'username', 'email', 'is_staff', 'is_active','phone_number','first_name','last_name','profile_picture','dashboard']
+            ref_name = "Admin User - List"

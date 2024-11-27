@@ -6,11 +6,32 @@ from django.core.validators import RegexValidator
 from shared.enums import GenderEnum
 from shared.helpers import generate_invitation_code
 
+class UserQuerySet(models.QuerySet):
+    """
+    Custom QuerySet for User model to add chainable methods.
+    """
+    def users(self):
+        """
+        Return all non-staff users.
+        """
+        return self.filter(is_staff=False)
 
 class UserManager(BaseUserManager):
     """
     Custom manager for User model.
     """
+
+    def get_queryset(self):
+        """
+        Return the custom UserQuerySet for all queries.
+        """
+        return UserQuerySet(self.model, using=self._db)
+
+    def users(self):
+        """
+        Shortcut method to directly access the `users` method of UserQuerySet.
+        """
+        return self.get_queryset().users()
 
     def create_user(self, username, email, password=None, **extra_fields):
         if not username:

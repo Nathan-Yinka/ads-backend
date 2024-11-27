@@ -14,6 +14,8 @@ from wallet.models import Wallet
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
 from django.db.models import Q
+from administration.models import Event
+from administration.serializers import EventSerializer
 
 
 class ProductViewSet(StandardResponseMixin, ModelViewSet):
@@ -183,3 +185,14 @@ class GameViewSet(StandardResponseMixin, ViewSet):
             data=serializer.data,
             status_code=status.HTTP_200_OK
         )
+
+
+class UserEventViewSet(StandardResponseMixin,ModelViewSet):
+    """
+    ViewSet for public access to list and retrieve events.
+    """
+    queryset = Event.objects.filter(is_active=True)
+    serializer_class = EventSerializer
+    permission_classes = [IsAuthenticated]
+
+    http_method_names = ['get']

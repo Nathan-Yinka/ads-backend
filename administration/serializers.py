@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Settings
+from .models import Settings,Event
 from finances.models import Deposit
 from shared.helpers import get_settings
 from users.models import Invitation
@@ -158,3 +158,8 @@ class DepositSerializer:
                 print(f"No invitation found for user {user.username}.")
 
 
+class EventSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Event
+        fields = ['id', 'name', 'description', 'image', 'is_active', 'created_at']
+        read_only_fields = ['created_at']

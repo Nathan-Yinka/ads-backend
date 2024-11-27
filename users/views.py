@@ -10,7 +10,8 @@ from .serializers import (
     UserProfileSerializer,
     ChangePasswordSerializer,
     ChangeTransactionalPasswordSerializer,
-    InvitationCodeSerializer
+    InvitationCodeSerializer,
+    AdminAuthSerializer
 )
 from administration.serializers import SettingsSerializer
 from rest_framework.exceptions import NotFound
@@ -351,4 +352,87 @@ class InvitationCodeViewSet(ViewSet):
                 "data": serializer.data,
             },
            status.HTTP_201_CREATED,
+        )
+
+class AdminAuthViewSet(ViewSet):
+    """
+    ViewSet for Admin-related operations, including login.
+    """
+
+    @swagger_auto_schema(
+        request_body=AdminAuthSerializer.Login,
+        responses={
+            200: openapi.Response(
+                description="Login successful.",
+                schema=openapi.Schema(
+                    type=openapi.TYPE_OBJECT,
+                    properties={
+                        "access": openapi.Schema(type=openapi.TYPE_STRING),
+                        "refresh": openapi.Schema(type=openapi.TYPE_STRING),
+                        "user": openapi.Schema(
+                            type=openapi.TYPE_OBJECT,
+                            properties={
+                                "username": openapi.Schema(type=openapi.TYPE_STRING),
+                                "email": openapi.Schema(type=openapi.TYPE_STRING),
+                                "phone_number": openapi.Schema(type=openapi.TYPE_STRING),
+                                "is_staff": openapi.Schema(type=openapi.TYPE_BOOLEAN),
+                            }
+                        ),
+                    },
+                )
+            ),
+            400: openapi.Response(description="Invalid credentials or not an admin."),
+        },
+        operation_summary="Admin Login",
+        operation_description="Authenticate an admin user and return JWT tokens.",
+    )
+    @action(detail=False, methods=['post'], permission_classes=[AllowAny])
+    def login(self, request):
+        serializer = AdminAuthSerializer.Login(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.validated_data['user']
+
+        # Generate JWT tokens
+        refresh = RefreshToken.for_user(user)
+        access_token = str(refresh.access_token)
+        refresh_token = str(refresh)
+
+        return Response(
+            success=True,
+            message="Dashboard data retrieved successfully.",
+            data={
+                "access": access_token,
+                "refresh": refresh_token,
+                "user": {
+                    "username": user.username,
+                    "email": user.email,
+                    "phone_number": getattr(user, 'phone_number', None),
+                    "is_staff": user.is_staff,
+                },
+            },
+            status_code=status.HTTP_200_OK,
+        )
+    
+
+    @swagger_auto_schema(
+        responses={200: AdminAuthSerializer.List()},
+        operation_summary="Get Admin Profile",
+        operation_description="Retrieve the current authenticated admin user's profile.",
+    )
+    @action(detail=False, methods=['get'], permission_classes=[IsSiteAdmin])
+    def me(self, request):
+        """
+        Action to retrieve the authenticated admin's profile.
+        Restricted to users with IsSiteAdmin permission.
+        """
+        user = request.user
+
+        # Serialize the user data with AdminAuthSerializer.List
+        serializer = AdminAuthSerializer.List(user)
+
+        return Response(
+            success=True,
+            message="Admin profile retrieved successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_200_OK,
         )

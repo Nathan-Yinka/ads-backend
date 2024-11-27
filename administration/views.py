@@ -1,4 +1,4 @@
-from rest_framework.viewsets import GenericViewSet,ViewSet
+from rest_framework.viewsets import GenericViewSet,ViewSet,ModelViewSet
 from rest_framework.exceptions import NotFound
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
@@ -6,12 +6,12 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import action
 from rest_framework import status
 from rest_framework.permissions import IsAuthenticated
-from .models import Settings
-from .serializers import SettingsSerializer,DepositSerializer,SettingsVideoSerializer
+from .models import Settings,Event
+from .serializers import SettingsSerializer,DepositSerializer,SettingsVideoSerializer,EventSerializer
 from shared.utils import standard_response as Response
 from shared.helpers import get_settings
 from shared.mixins import StandardResponseMixin
-from core.permissions import IsSiteAdmin
+from core.permissions import IsSiteAdmin,IsAdminOrReadOnly
 from finances.models import Deposit
 from cloudinary.uploader import upload
 from rest_framework.exceptions import ValidationError
@@ -186,3 +186,13 @@ class AdminDepositViewSet(StandardResponseMixin, ViewSet):
             data=serializer.data,
             status_code=status.HTTP_200_OK,
         )
+
+
+class EventViewSet(StandardResponseMixin,ModelViewSet):
+    """
+    ViewSet for managing events.
+    Only admin users are allowed to access this viewset.
+    """
+    queryset = Event.objects.all()
+    serializer_class = EventSerializer
+    permission_classes = [IsSiteAdmin]

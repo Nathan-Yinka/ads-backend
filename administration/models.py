@@ -40,3 +40,16 @@ class Settings(models.Model):
         if not self.pk and Settings.objects.exists():
             raise ValueError("There can only be one instance of Settings.")
         super(Settings, self).save(*args, **kwargs)
+
+class Event(models.Model):
+    name = models.CharField(max_length=255, verbose_name="Event Name")
+    description = models.TextField(verbose_name="Event Description")
+    image =models.ImageField(upload_to='events/')
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True) 
+
+    def __str__(self):
+        return f"Event named {self.name}"
+    
+    class Meta:
+        ordering = ['-created_at']
