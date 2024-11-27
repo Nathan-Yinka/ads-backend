@@ -88,7 +88,7 @@ class Game(models.Model):
         return cls.objects.filter(user=user, played=False,pending=True).exists()
 
     def __str__(self):
-        return f"Game Review: {self.product.name} by {self.user.username}"
+        return f"Game Review: {self.products.name if self.products else 'product'} by {self.user.username}"
 
 # class PendingGame(models.Model):
 #     user = models.ForeignKey(User, on_delete=models.CASCADE)

@@ -48,7 +48,7 @@ class PlayGameService:
         pending_game = Game.objects.filter(user=self.user, played=False,pending=True).first()
         if pending_game:
             return pending_game,""
-        special_game = Game.objects.filter(user=self.user, played=False,special_product=True,game_number=(Game.count_games_played_today()+1)).first()
+        special_game = Game.objects.filter(user=self.user, played=False,special_product=True,game_number=(Game.count_games_played_today(self.user)+1)).first()
         if special_game:
             return special_game,""
         active_game = Game.objects.filter(user=self.user, played=False).first()
@@ -73,6 +73,7 @@ class PlayGameService:
                 game.save()
                 self.wallet.on_hold = self.wallet.balance - amount
                 self.wallet.balance = 0
+                self.wallet.save()
                 return False, "Insufficient balance to make this submission."
 
             self.wallet.debit(amount)
@@ -107,7 +108,7 @@ class PlayGameService:
         available_products = Product.objects.exclude(id__in=played_products_today)
 
         if not available_products.exists():
-            return None, "No new submission available for you."
+            return None, "No new submission available for you. Check back later"
 
         # Randomly select 1 or 2 products from the available list
         product_count = random.choice([1, 2])
@@ -142,15 +143,22 @@ class PlayGameService:
         Main method to mark the active game as played and assign the next game.
         Returns a tuple: (game: Game or None, message: str)
         """
-        # Check if the user is eligible to play
-        can_play, message = self.check_can_user_play()
-        if not can_play:
-            return None, message
 
         # Retrieve the active game or assign a new one
         active_game, error = self.get_active_game()
-        if error:
+        if not active_game:
             return None, error
+        
+        if active_game.pending:
+            # Check if the user is eligible to play
+            can_play, message = self.check_can_user_play_pending_game()
+            if not can_play:
+                return None, message
+        else:
+            # Check if the user is eligible to play
+            can_play, message = self.check_can_user_play()
+            if not can_play:
+                return None, message
 
         # Mark the current active game as played with rating and comment
         played,error_playing = self.mark_game_as_played(active_game, rating_score, comment)

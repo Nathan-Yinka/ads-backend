@@ -13,6 +13,7 @@ from .services import PlayGameService
 from wallet.models import Wallet
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from django.db.models import Q
 
 
 class ProductViewSet(StandardResponseMixin, ModelViewSet):
@@ -41,7 +42,7 @@ class GameViewSet(StandardResponseMixin, ViewSet):
         if not wallet:
             wallet = Wallet.objects.create(user=user)
 
-        total_number_can_play = 3  # Example: Maximum number of games per day
+        total_number_can_play = wallet.package.daily_missions  # Example: Maximum number of games per day
         return PlayGameService(user, total_number_can_play, wallet), ""
 
     @action(detail=False, methods=['get'], url_path='current-game')
@@ -62,12 +63,15 @@ class GameViewSet(StandardResponseMixin, ViewSet):
 
         # Get the current active game
         game, error = service.get_active_game()
-
+        error_payload = {
+            "total_number_can_play": service.total_number_can_play,
+            "current_number_count": Game.count_games_played_today(user)
+        }
         if error:
             return self.standard_response(
                 success=False,
                 message=error,
-                data=None,
+                data=error_payload,
                 status_code=status.HTTP_404_NOT_FOUND
             )
 
@@ -81,7 +85,7 @@ class GameViewSet(StandardResponseMixin, ViewSet):
         )
         return self.standard_response(
             success=True,
-            message="Current active game retrieved successfully.",
+            message="Current active Submission retrieved successfully.",
             data=serializer.data,
             status_code=status.HTTP_200_OK
         )
@@ -93,7 +97,7 @@ class GameViewSet(StandardResponseMixin, ViewSet):
         request_body=GameSerializer.PlayGameRequestSerializer,
         responses={
             200: openapi.Response(
-                description="Game played successfully",
+                description="Submission was successfully",
                 schema=GameSerializer.Retrieve()
             ),
             400: openapi.Response(
@@ -155,5 +159,27 @@ class GameViewSet(StandardResponseMixin, ViewSet):
             success=True,
             message=message,
             data=response_serializer.data,
+            status_code=status.HTTP_200_OK
+        )
+        
+    @action(detail=False, methods=['get'], url_path='game-record')
+    def game_record(self, request):
+        user = request.user
+
+        # Filter games for the user with `played=True` OR `pending=True`
+        games = Game.objects.filter(
+            user=user
+        ).filter(
+            Q(played=True) | Q(pending=True)
+        ).order_by('-updated_at', '-created_at')
+
+        # Serialize the data
+        serializer = GameSerializer.List(games, many=True)
+
+        # Use the preferred response format
+        return self.standard_response(
+            success=True,
+            message="Game record",
+            data=serializer.data,
             status_code=status.HTTP_200_OK
         )

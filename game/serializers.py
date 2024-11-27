@@ -72,13 +72,17 @@ class GameSerializer:
                 'total_number_can_play', 
                 'current_number_count', 
                 'rating_score',
+                'comment',
                 'special_product',
                 'created_at',
                 'rating_no',
+                'game_number',
+                'pending',
             ]
             ref_name = "Game Retrieve" 
             extra_kwargs = {
             'rating_score': {'write_only': True},
+            'comment': {'write_only': True},
         }
         
         def get_total_number_can_play(self, obj):
@@ -94,3 +98,21 @@ class GameSerializer:
             This should be passed in the serializer context.
             """
             return self.context.get('current_number_count', 0)
+        
+    class List(serializers.ModelSerializer):
+        products = ProductList(many=True) 
+        class Meta:
+            model = Game
+            fields = [
+                'id', 
+                'products', 
+                'amount', 
+                'commission', 
+                'rating_score',
+                'comment',
+                'special_product',
+                'updated_at',
+                'rating_no',
+                'pending',
+            ]
+            ref_name = "Game Retrieve" 
