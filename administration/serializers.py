@@ -176,6 +176,7 @@ class DepositSerializer:
 
 
 class EventSerializer(serializers.ModelSerializer):
+    created_by = UserPartialSerilzer(read_only=True)
     class Meta:
         model = Event
         fields = ['id', 'name', 'description', 'image', 'is_active', 'created_at','created_by']
