@@ -11,8 +11,8 @@ def standard_response(success: bool, message: str, data=None, errors=None, statu
     response_data = {
         "success": success,
         "message": message,
-        "data": data if data is not None else {},
-        "errors": errors if errors is not None else {}
+        "data": data if data is not None else None,
+        "errors": errors if errors is not None else None
     }
     return Response(response_data, status=status_code)
 
