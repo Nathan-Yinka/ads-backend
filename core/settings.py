@@ -269,16 +269,16 @@ DATABASES = {
 #     }
 # }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.postgresql',
-#         'NAME': 'ads_api',  # Updated database name
-#         'USER': 'mydb_owner',  # Updated user
-#         'PASSWORD': 'jxKBk98pgmXa',  # Updated password
-#         'HOST': 'ep-old-union-a5by6rze.us-east-2.aws.neon.tech',  # Updated host
-#         'PORT': '5432',  # Same port
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'ads_api',  # Updated database name
+        'USER': 'mydb_owner',  # Updated user
+        'PASSWORD': 'jxKBk98pgmXa',  # Updated password
+        'HOST': 'ep-old-union-a5by6rze.us-east-2.aws.neon.tech',  # Updated host
+        'PORT': '5432',  # Same port
+    }
+}
 
 print(DATABASES["default"])
 

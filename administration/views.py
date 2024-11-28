@@ -193,6 +193,9 @@ class EventViewSet(StandardResponseMixin,ModelViewSet):
     ViewSet for managing events.
     Only admin users are allowed to access this viewset.
     """
+
+    parser_classes = [FormParser, MultiPartParser]
+    
     queryset = Event.objects.all()
     serializer_class = EventSerializer
     permission_classes = [IsSiteAdmin]

@@ -3,7 +3,11 @@ from .models import Settings,Event
 from finances.models import Deposit
 from shared.helpers import get_settings
 from users.models import Invitation
+# from users.serializers import UserPartialSerilzer
 from shared.helpers import create_user_notification
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
 
 class SettingsSerializer(serializers.ModelSerializer):
     class Meta:
@@ -45,6 +49,18 @@ class SettingsVideoSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("The uploaded file is not a valid video format.")
         return value
 
+class UserPartialSerilzer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "last_name",
+            "first_name",
+            "is_active"
+        ] 
+
 class DepositSerializer:
     """
     Container for different Deposit serializers used in various actions.
@@ -54,6 +70,7 @@ class DepositSerializer:
         """
         Serializer for listing deposits.
         """
+        user = UserPartialSerilzer(read_only=True)
         class Meta:
             model = Deposit
             fields = "__all__"
