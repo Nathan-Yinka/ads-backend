@@ -178,5 +178,12 @@ class DepositSerializer:
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
-        fields = ['id', 'name', 'description', 'image', 'is_active', 'created_at']
-        read_only_fields = ['created_at']
+        fields = ['id', 'name', 'description', 'image', 'is_active', 'created_at','created_by']
+        read_only_fields = ['created_at','created_by']
+
+    def save(self, **kwargs):
+        """
+        Automatically set the `created_by` field to the currently logged-in user for both creation and update.
+        """
+        kwargs['created_by'] = self.context['request'].user
+        return super().save(**kwargs)

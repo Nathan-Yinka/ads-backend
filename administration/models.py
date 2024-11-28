@@ -2,6 +2,9 @@ from django.db import models
 from cloudinary_storage.storage import MediaCloudinaryStorage
 from cloudinary.models import CloudinaryField
 import cloudinary
+from django.contrib.auth import get_user_model
+
+# User = get_user_model()
 
 class Settings(models.Model):
     """
@@ -47,6 +50,14 @@ class Event(models.Model):
     image =models.ImageField(upload_to='events/')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True) 
+    created_by = models.ForeignKey(
+    "users.User",
+    on_delete=models.SET_NULL, 
+    related_name="events_created",  # For reverse relation naming
+    null=True,  # Allow NULL values
+    blank=True,  # Optional: Allow blank in forms (useful for admin or forms)
+    verbose_name="Created By"
+)
 
     def __str__(self):
         return f"Event named {self.name}"
