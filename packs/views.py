@@ -19,6 +19,12 @@ class PackViewSet(StandardResponseMixin, ModelViewSet):
     permission_classes = [IsAuthenticated]
     parser_classes = [MultiPartParser, FormParser]
 
+    def get_serializer_context(self):
+        # Add request to the serializer context
+        context = super().get_serializer_context()
+        context['request'] = self.request
+        return context
+
     def get_permissions(self):
         """
         Custom permission logic for different actions.
