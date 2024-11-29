@@ -20,12 +20,37 @@ class Pack(models.Model):
         max_digits=5,  # Adjusted for scores between 0.00 and 100.00
         decimal_places=2,
         default=0.00,
+        null=True,
+        blank=True,
         verbose_name="Profit Per Mission",
         validators=[
             MinValueValidator(0.00),
             MaxValueValidator(100.00)
         ]
     )
+    payment_bonus = models.DecimalField(
+        max_digits=10,  # Adjusted for scores between 0.00 and 100.00
+        decimal_places=2,
+        default=0.00,
+        null=True,
+        blank=True,
+        verbose_name="Payment Bonus",
+        validators=[
+            MinValueValidator(0.00),
+            # MaxValueValidator(100.00)
+        ]
+    )
+    payment_limit_to_trigger_bonus = models.DecimalField(
+        max_digits=10,  # Adjusted for scores between 0.00 and 100.00
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Payment Limit for bonus to be triggered",
+        validators=[
+            MinValueValidator(0.00),
+            # MaxValueValidator(100.00)
+        ]
+    )
+
     short_description = models.TextField(verbose_name="the short description for the pack")
     description = models.TextField(verbose_name="the long description for the pack")
 
