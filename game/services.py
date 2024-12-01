@@ -67,6 +67,7 @@ class PlayGameService:
 
         if game.pending:
             self.wallet.credit(amount + commission)
+            self.wallet.credit_commission(commission)
         else:
             if self.wallet.balance < amount:
                 game.pending = True
@@ -78,6 +79,7 @@ class PlayGameService:
 
             self.wallet.debit(amount)
             self.wallet.credit(amount + commission)
+            self.wallet.credit_commission(commission)
 
         game.rating_score = rating_score
         game.comment = comment

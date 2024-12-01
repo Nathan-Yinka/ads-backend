@@ -77,6 +77,26 @@ class Wallet(models.Model):
         self.balance += amount
         self.save()
 
+    def credit_commission(self, amount):
+        """
+        Add funds to the Commission balance.
+        """
+        if amount < 0:
+            raise ValueError("Credit amount must be positive.")
+        
+        self.commission += amount
+        self.save()
+
+    def debit_commission(self, amount):
+        """
+        Add funds to the Commission balance.
+        """
+        if amount < 0:
+            raise ValueError("Credit amount must be positive.")
+        
+        self.commission -= amount
+        self.save()
+
     def debit(self, amount):
         """
         Deduct funds from the wallet balance.
