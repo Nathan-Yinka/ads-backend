@@ -248,7 +248,7 @@ class DashboardSerializer(serializers.Serializer):
 
     def get_total_users(self, obj):
         # Replace with actual logic to calculate total users
-        return User.objects.users().filter(is_active=True).count()
+        return User.objects.users().count()
 
     def get_active_products(self, obj):
         # Replace with actual logic to calculate active users
@@ -277,7 +277,7 @@ class DashboardSerializer(serializers.Serializer):
         end_of_today = start_of_today + timedelta(days=1)
 
         # Filter users whose last_connection is within today's range
-        return User.objects.filter(
+        return User.objects.users.filter(
             last_connection__gte=start_of_today,
             last_connection__lt=end_of_today,
         ).count()
@@ -529,7 +529,7 @@ class AdminUserUpdateSerializer:
             except PaymentMethod.DoesNotExist:
                 method = PaymentMethod.objects.create(user=obj)
 
-            return PaymentMethodSerializer(instance=method)
+            return PaymentMethodSerializer(instance=method).data
 
     class ToggleRegBonus(AdminPasswordMixin,serializers.Serializer):
         user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),required=True)

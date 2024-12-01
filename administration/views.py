@@ -234,18 +234,21 @@ class UserReadViewSet(StandardResponseMixin,ReadOnlyModelViewSet):
         #     return AdminUserUpdateSerializer.UserProfileRetrieve
         return super().get_serializer_class()
     
-    def handle_action_response(self, data, message="Action completed successfully."):
+    def handle_action_response(self, data, message="Action completed successfully.",override_serializer=None):
         """
         Centralized function to handle responses using UserProfile serializer.
         Returns a standardized response.
         """
-        serializer = UserProfileListSerializer(instance=data)
+        if not override_serializer:
+            serializer = UserProfileListSerializer(instance=data)
+        else:
+            serializer = override_serializer(instance=data)
         return self.standard_response(
-            success=True,
-            message=message,
-            data=serializer.data,
-            status_code=status.HTTP_200_OK,
-        )
+                success=True,
+                message=message,
+                data=serializer.data,
+                status_code=status.HTTP_200_OK,
+            )
     @action(detail=False, methods=['post'], url_path='update-login-password')
     def update_login_password(self, request):
         """
@@ -321,8 +324,8 @@ class UserReadViewSet(StandardResponseMixin,ReadOnlyModelViewSet):
         """
         Get more User Infoamtion
         """
-        serializer = AdminUserUpdateSerializer.UserProfile(data=request.data)
+        serializer =  self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
-        return self.handle_action_response(user, "User Info Retrieved Succussfully")
+        return self.handle_action_response(user, "User Info Retrieved Succussfully",AdminUserUpdateSerializer.UserProfileRetrieve)
 
