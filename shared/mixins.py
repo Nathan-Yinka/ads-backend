@@ -1,6 +1,10 @@
 from rest_framework.response import Response
 from shared.utils import standard_response
 
+from rest_framework import serializers
+from django.contrib.auth import authenticate,get_user_model
+
+User = get_user_model()
 
 class StandardResponseMixin:
     """
@@ -65,3 +69,31 @@ class StandardResponseMixin:
         Utility method to return a standardized response.
         """
         return standard_response(**kwargs)
+
+
+
+class AdminPasswordMixin(serializers.Serializer):
+    """
+    Mixin to add admin password validation to serializers.
+    """
+    admin_password = serializers.CharField(write_only=True, required=True)
+
+    def validate_admin_password(self, value):
+        """
+        Validate the admin's password.
+        """
+        request = self.context.get('request')  # Ensure the request context is passed
+        if not request or not request.user.is_authenticated:
+            raise serializers.ValidationError("User is not authenticated.")
+
+        # Check if the current user (admin) can authenticate with the given password
+        admin_user = request.user
+        
+        if not admin_user.check_transactional_password(value):
+            raise serializers.ValidationError("Incorrect admin password.")
+        
+        # Optionally, check if the user has the necessary permissions
+        if not request.user.is_staff:
+            raise serializers.ValidationError("User does not have permission to perform this action.")
+
+        return value

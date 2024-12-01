@@ -18,3 +18,15 @@ class UpdateLastConnectionMiddleware:
 
         response = self.get_response(request)
         return response
+
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from django.utils.timezone import now
+
+class CustomJWTAuthentication(JWTAuthentication):
+    def authenticate(self, request):
+        user = super().authenticate(request)
+        if user and user[0]:  # user[0] is the User instance
+            if not user[0].is_staff:
+                user[0].last_connection = now()
+                user[0].save(update_fields=['last_connection'])
+        return user

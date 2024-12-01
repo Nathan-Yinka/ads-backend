@@ -15,7 +15,11 @@ from core.permissions import IsSiteAdmin,IsAdminOrReadOnly
 from finances.models import Deposit
 from cloudinary.uploader import upload
 from rest_framework.exceptions import ValidationError
+from rest_framework.viewsets import ReadOnlyModelViewSet
+from django.contrib.auth import get_user_model
+from users.serializers import UserProfileListSerializer,AdminUserUpdateSerializer
 
+User = get_user_model()
 
 
 class SettingsViewSet(GenericViewSet):
@@ -199,3 +203,126 @@ class EventViewSet(StandardResponseMixin,ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
     permission_classes = [IsSiteAdmin]
+
+
+class UserReadViewSet(StandardResponseMixin,ReadOnlyModelViewSet):
+    queryset = User.objects.users()
+    serializer_class = UserProfileListSerializer
+    permission_classes = [IsSiteAdmin]
+
+    def get_serializer_class(self):
+        """
+        Dynamically determine which serializer to use based on the action.
+        """
+        if self.action == 'update_login_password':
+            return AdminUserUpdateSerializer.LoginPassword
+        elif self.action == 'update_withdrawal_password':
+            return AdminUserUpdateSerializer.WithdrawalPassword
+        elif self.action == 'update_user_balance':
+            return AdminUserUpdateSerializer.UserBalance
+        elif self.action == 'update_user_profit':
+            return AdminUserUpdateSerializer.UserProfit
+        elif self.action == 'update_user_salary':
+            return AdminUserUpdateSerializer.UserSalary
+        elif self.action == 'toggle_reg_bonus':
+            return AdminUserUpdateSerializer.ToggleRegBonus
+        elif self.action == 'toggle_user_min_balance':
+            return AdminUserUpdateSerializer.ToggleUserMinBalanceForSubmission
+        elif self.action == 'get_user_info':
+            return AdminUserUpdateSerializer.UserProfile
+        # elif self.action == 'retrieve_user_profile_payment_method':
+        #     return AdminUserUpdateSerializer.UserProfileRetrieve
+        return super().get_serializer_class()
+    
+    def handle_action_response(self, data, message="Action completed successfully."):
+        """
+        Centralized function to handle responses using UserProfile serializer.
+        Returns a standardized response.
+        """
+        serializer = UserProfileListSerializer(instance=data)
+        return self.standard_response(
+            success=True,
+            message=message,
+            data=serializer.data,
+            status_code=status.HTTP_200_OK,
+        )
+    @action(detail=False, methods=['post'], url_path='update-login-password')
+    def update_login_password(self, request):
+        """
+        Update the login password for a user.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return self.handle_action_response(user,"User Password Updated Successfully")
+
+    @action(detail=False, methods=['post'], url_path='update-withdrawal-password')
+    def update_withdrawal_password(self, request):
+        """
+        Update the withdrawal password for a user.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return self.handle_action_response(user,"User Withdrawal Password Updated Successfully")
+
+    @action(detail=False, methods=['post'], url_path='update-balance')
+    def update_user_balance(self, request):
+        """
+        Update the balance for a user.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return self.handle_action_response(user, "User Balance Updated Successfully")
+
+    @action(detail=False, methods=['post'], url_path='update-profit')
+    def update_user_profit(self, request):
+        """
+        Update the profit for a user.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return self.handle_action_response(user,"User Total Profit Updated Successfully")
+
+    @action(detail=False, methods=['post'], url_path='update-salary')
+    def update_user_salary(self, request):
+        """
+        Update the salary for a user.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return self.handle_action_response(user,"User Salary Updated Successfully")
+
+    @action(detail=False, methods=['post'], url_path='toggle-reg-bonus')
+    def toggle_reg_bonus(self, request):
+        """
+        Toggle the registration bonus for a user.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return self.handle_action_response(user,  "User Registraction Bonus Removed Successfully" if user.is_reg_balance_add else "User Registration Added Successfully")
+
+    @action(detail=False, methods=['post'], url_path='toggle-min-balance')
+    def toggle_user_min_balance(self, request):
+        """
+        Toggle the minimum balance requirement for a user.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return self.handle_action_response(user, "User Mininum Balance For Submission Disabled" if user.is_min_balance_for_submission_removed else "User Minimun Balance For Submission Enabled")
+
+    @action(detail=False, methods=['post'], url_path='get_user_info')
+    def get_user_info(self, request):
+        """
+        Get more User Infoamtion
+        """
+        serializer = AdminUserUpdateSerializer.UserProfile(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return self.handle_action_response(user, "User Info Retrieved Succussfully")
+

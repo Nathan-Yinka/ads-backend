@@ -26,6 +26,9 @@ def create_user_wallet(sender, instance, created, **kwargs):
         try:
             # Create the wallet with the signup bonus
             Wallet.objects.create(user=instance, balance=signup_bonus)
+            instance.is_reg_balance_add = True
+            instance.reg_balance_amount = signup_bonus
+            instance.save()
             # Create a notification for the user
             if signup_bonus > 0:
                 create_user_notification(instance, "Signup Bonus", f"Successful registration! You have received a signup bonus of {signup_bonus} USD")

@@ -1,9 +1,25 @@
 from rest_framework import serializers
 from .models import Deposit,PaymentMethod,Withdrawal
-from users.serializers import UserPartialSerilzer
+from django.contrib.auth  import get_user_model
+
+User = get_user_model()
+
+class UserPartialSerilzer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = [
+            "id",
+            "username",
+            "email",
+            "last_name",
+            "first_name",
+            "is_active"
+        ]
+
 
 class DepositSerializer(serializers.ModelSerializer):
-    user = UserPartialSerilzer(read_only=True)  # Display the username instead of the ID
+    # from users.serializers import UserPartialSerilzer
+    # user = UserPartialSerilzer(read_only=True)  # Display the username instead of the ID
 
     class Meta:
         model = Deposit

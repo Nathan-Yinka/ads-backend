@@ -22,9 +22,10 @@ class PlayGameService:
         """
         if self.wallet.on_hold != 0:
             return False, "You have a pending transaction, please clear it to proceed."
-        min_balance = getattr(self.settings, 'minimum_balance_for_submissions', 100)
-        if self.wallet.balance < min_balance:
-            return False, f"You need a minimum of {min_balance} USD balnce to make a submission."
+        if not self.user.is_min_balance_for_submission_removed:
+            min_balance = getattr(self.settings, 'minimum_balance_for_submissions', 100)
+            if self.wallet.balance < min_balance:
+                return False, f"You need a minimum of {min_balance} USD balnce to make a submission."
         if Game.count_games_played_today(self.user) >= self.total_number_can_play:
             return False, "You have reached the maximum number of submissions you can make today, upgrade you package"
         return True, ""

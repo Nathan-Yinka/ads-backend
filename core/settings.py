@@ -68,7 +68,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    'users.middleware.UpdateLastConnectionMiddleware',
+    # 'users.middleware.UpdateLastConnectionMiddleware',
 ]
 
 ROOT_URLCONF = 'core.urls'
@@ -149,7 +149,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 REST_FRAMEWORK = {
     # Authentication settings: Use JWT for secure token-based authentication
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'users.middleware.CustomJWTAuthentication',
     ),
 
     # Pagination settings: Use a custom pagination class to format paginated responses

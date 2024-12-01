@@ -9,11 +9,14 @@ from wallet.models import Wallet
 from wallet.serializers import WalletSerializer
 from administration.serializers import SettingsSerializer
 from shared.helpers import get_settings
+from shared.mixins import AdminPasswordMixin
 from game.models import Product,Game
 from django.utils.timezone import now, timedelta
 from django.db.models import Q
 from django.db.models.functions import ExtractMonth, ExtractYear
 from django.db.models import Count
+from finances.models import PaymentMethod
+from finances.serializers import PaymentMethodSerializer
 
 
 
@@ -124,7 +127,7 @@ class UserLoginSerializer(BaseAuthSerializer, serializers.ModelSerializer):
         if user is None:
             raise serializers.ValidationError({"username_or_email": "Invalid credentials."})
         if not user.is_active:
-            raise serializers.ValidationError({"username_or_email": "User is inactive."})
+            raise serializers.ValidationError({"username_or_email": "Your account is currently is inactive."})
 
         attrs['user'] = user
         return attrs
@@ -136,6 +139,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
         model = User
         fields = ['id','username','email','phone_number','first_name','last_name','gender','referral_code','profile_picture','last_connection','is_active','date_joined','wallet','settings']
         read_only_fields = ['date_joined','referral_code']
+        ref_name = "UserProfileSerializer "
     
     def get_settings(self,obj):
         instance = get_settings()
@@ -375,3 +379,194 @@ class AdminAuthSerializer:
             model = User
             fields = ['id', 'username', 'email', 'is_staff', 'is_active','phone_number','first_name','last_name','profile_picture','dashboard']
             ref_name = "Admin User - List"
+
+
+class UserProfileListSerializer(serializers.ModelSerializer):
+    wallet = WalletSerializer.UserWalletSerializer(read_only=True) 
+    total_play = serializers.SerializerMethodField(read_only=True)
+    total_available_play = serializers.SerializerMethodField(read_only=True)
+    total_product_submitted = serializers.SerializerMethodField(read_only=True)
+    total_negative_product_submitted = serializers.SerializerMethodField(read_only=True)
+    class Meta:
+        model = User
+        fields = ['id','username','email','phone_number','first_name','last_name','gender','referral_code','profile_picture','last_connection','is_active','date_joined','wallet','total_play','total_available_play','total_product_submitted','total_negative_product_submitted']
+        read_only_fields = ['date_joined','referral_code',]
+
+    def get_total_play(self,obj):
+        return Game.count_games_played_today(obj)
+
+    def get_total_available_play(self,obj):
+        try:
+            wallet = obj.wallet
+            return wallet.package.daily_missions
+        except Wallet.DoesNotExist:
+            return None
+
+    def get_total_negative_product_submitted(self,obj):
+        return Game.objects.filter(user=obj,special_product=True,played=True).count()
+
+    def get_total_product_submitted(Self,obj):
+        return Game.objects.filter(user=obj,played=True).count()
+
+class AdminUserUpdateSerializer:
+
+    class LoginPassword(serializers.Serializer):
+        user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),required=True)
+        password = serializers.CharField(write_only=True, required=True)
+
+        def save(self):
+            """
+            Update the password of the user.
+            """
+            user = self.validated_data['user']  # This will give you the user instance
+            new_password = self.validated_data['password']
+            user.set_password(new_password)
+            user.save()
+            return user
+        
+    class WithdrawalPassword(serializers.Serializer):
+        user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),required=True)
+        password = serializers.CharField(write_only=True, required=True)
+
+        def save(self):
+            """
+            Update the password of the user.
+            """
+            user = self.validated_data['user']  # This will give you the user instance
+            new_password = self.validated_data['password']
+            user.transactional_password = new_password
+            user.save()
+            return user
+        
+    class UserBalance(AdminPasswordMixin,serializers.Serializer):
+        user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),required=True)
+        balance = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
+        reason = serializers.CharField(required=True)
+
+        def save(self):
+            """
+            Update the balance for the given user and record the reason.
+            """
+            user = self.validated_data['user']
+            new_balance = self.validated_data['balance']
+            reason = self.validated_data['reason']
+            try:
+                wallet = user.wallet
+            except Wallet.DoesNotExist:
+                wallet = Wallet.objects.create(user=user)
+            wallet.balance = new_balance
+            user.save()
+            wallet.save()
+
+            return user
+        
+    class UserProfit(AdminPasswordMixin,serializers.Serializer):
+        user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),required=True)
+        profit = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
+        reason = serializers.CharField(required=True)
+
+        def save(self):
+            """
+            Update the balance for the given user and record the reason.
+            """
+            user = self.validated_data['user']
+            new_balance = self.validated_data['profit']
+            reason = self.validated_data['reason']
+            try:
+                wallet = user.wallet
+            except Wallet.DoesNotExist:
+                wallet = Wallet.objects.create(user=user)
+            wallet.commission = new_balance
+            user.save()
+            wallet.save()
+            
+            return user
+        
+    class UserSalary(AdminPasswordMixin,serializers.Serializer):
+        user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),required=True)
+        salary = serializers.DecimalField(max_digits=10, decimal_places=2, required=True)
+        reason = serializers.CharField(required=True)
+
+        def save(self):
+            """
+            Update the salary for the given user and record the reason.
+            """
+            user = self.validated_data['user']
+            new_balance = self.validated_data['salary']
+            reason = self.validated_data['reason']
+            try:
+                wallet = user.wallet
+            except Wallet.DoesNotExist:
+                wallet = Wallet.objects.create(user=user)
+            wallet.salary = new_balance
+            user.save()
+            wallet.save()
+            
+            return user
+
+    class UserProfile(serializers.Serializer):
+        user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),required=True)
+
+        def save(self):
+            """
+            Get all the user datails
+            """
+            user = self.validated_data['user']
+
+            return user
+        
+    class UserProfileRetrieve(UserProfileListSerializer):
+        use_payment_method = serializers.SerializerMethodField(read_only=True)
+
+        class Meta:
+            model = User
+            fields = "__all__"
+            ref_name = "Admin User Retrieve"
+
+        def get_use_payment_method(self,obj):
+            try:
+                method = obj.payment_method
+            except PaymentMethod.DoesNotExist:
+                method = PaymentMethod.objects.create(user=obj)
+
+            return PaymentMethodSerializer(instance=method)
+
+    class ToggleRegBonus(AdminPasswordMixin,serializers.Serializer):
+        user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),required=True)
+
+        def save(self):
+            """
+            Get all the user datails
+            """
+            user = self.validated_data['user']
+            if user.is_reg_balance_add:
+                new_balance = user.wallet.balance - user.reg_balance_amount
+                user.is_reg_balance_add = False
+                user.wallet.balance = new_balance
+                user.wallet.save()
+                
+            else:
+                new_balance = user.wallet.balance + user.reg_balance_amount
+                user.is_reg_balance_add = True
+                user.wallet.balance = new_balance
+                user.wallet.save()
+
+            user.save()
+            return user
+        
+    class ToggleUserMinBalanceForSubmission(serializers.Serializer):
+        user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),required=True)
+
+        def save(self):
+            """
+            Get all the user datails
+            """
+            user = self.validated_data['user']
+            if user.is_min_balance_for_submission_removed:
+                user.is_min_balance_for_submission_removed = False
+            else:
+                user.is_min_balance_for_submission_removed = True
+
+            user.save()
+            return user
+

@@ -26,8 +26,8 @@ class UserAdmin(BaseUserAdmin):
     fieldsets = (
         (None, {"fields": ("username", "email", "password")}),
         (_("Personal Info"), {"fields": ("first_name", "last_name", "phone_number", "gender", "transactional_password",)}),
-        (_("Permissions"), {"fields": ("is_staff", "is_active", "is_superuser", "groups", "user_permissions")}),
-        (_("Important Dates"), {"fields": ("last_login", "date_joined")}),
+        (_("Permissions"), {"fields": ("is_staff", "is_active", "is_superuser", "groups", "user_permissions","is_min_balance_for_submission_removed","is_reg_balance_add")}),
+        (_("Important Dates"), {"fields": ("last_login", "date_joined","last_connection")}),
     )
 
     # Make `date_joined` readonly

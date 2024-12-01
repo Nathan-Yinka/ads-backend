@@ -1,6 +1,6 @@
 from django.urls import path,include
 from rest_framework.routers import DefaultRouter
-from .views import SettingsViewSet,AdminDepositViewSet,EventViewSet
+from .views import SettingsViewSet,AdminDepositViewSet,EventViewSet,UserReadViewSet
 
 router = DefaultRouter()
 router.register(r'settings', SettingsViewSet, basename='settings')
@@ -8,6 +8,7 @@ router.register(r'settings', SettingsViewSet, basename='settings')
 
 router.register(r'deposits', AdminDepositViewSet, basename='admin-deposit')
 router.register(r'events', EventViewSet, basename='event')
+router.register(r'users', UserReadViewSet, basename='users')
 
 
 urlpatterns = [

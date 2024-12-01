@@ -104,6 +104,16 @@ class User(AbstractBaseUser, PermissionsMixin):
         null=True, 
         verbose_name="Last Connection"
     )
+    is_min_balance_for_submission_removed = models.BooleanField(default=False)
+    is_reg_balance_add = models.BooleanField(default=False,blank=True, null=True)
+    reg_balance_amount = models.DecimalField(
+        max_digits=12, 
+        decimal_places=2, 
+        default=0.00,
+        verbose_name="Regisration Bonus Added amount",
+        blank=True,
+        null=True,
+    )
     is_active = models.BooleanField(default=True)
     is_staff = models.BooleanField(default=False)
     date_joined = models.DateTimeField(auto_now_add=True)
