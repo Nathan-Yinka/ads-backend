@@ -12,6 +12,7 @@ class OnHoldPaySerializer(serializers.ModelSerializer):
     class Meta:
         model = OnHoldPay
         fields = "__all__"
+        ref_name = "OnHoldPaySerializer game"
 
 
 class ProductSerializer(serializers.ModelSerializer):
@@ -193,6 +194,7 @@ class AdminNegativeUserSerializer:
         number_of_negative_product = serializers.SerializerMethodField(read_only=True)
         rank_appearance = serializers.SerializerMethodField(read_only=True)
         on_hold = OnHoldPaySerializer(read_only=True)
+        ref_name = "Negative User List"
         class Meta:
             model = Game
             fields = ['id','user','on_hold','number_of_negative_product','rank_appearance','is_active']

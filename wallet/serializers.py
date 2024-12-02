@@ -12,6 +12,7 @@ class WalletSerializer:
         class Meta:
             model = Wallet
             fields = ["balance","on_hold","commission","salary",'package','credit_score'] 
+            ref_name = 'WalletSerializer 1'
 
 
     class AdminUserWalletSerializer(serializers.ModelSerializer):
@@ -19,8 +20,10 @@ class WalletSerializer:
         class Meta:
             model = Wallet
             fields = "__all__"
+            ref_name = "WalletSerializer 2"
 
 class OnHoldPaySerializer(serializers.ModelSerializer):
     class Meta:
         model = OnHoldPay
         fields = ['id','min_amount','max_amount','is_active']
+        ref_name = "OnHoldPaySerializer walltet 2"

@@ -344,14 +344,12 @@ class InvitationCodeViewSet(ViewSet):
 
         # Serialize the new invitation code
         serializer = InvitationCodeSerializer(invitation_code)
-
+        
         return Response(
-            {
-                "success": True,
-                "message": "Invitation code generated successfully.",
-                "data": serializer.data,
-            },
-           status.HTTP_201_CREATED,
+            success=True,
+            message="Invitation code generated successfully.",
+            data=serializer.data,
+            status_code=status.HTTP_201_CREATED
         )
 
 class AdminAuthViewSet(ViewSet):
