@@ -135,7 +135,7 @@ class AdminNegativeUserSerializer:
         user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),required=True)
         on_hold = serializers.PrimaryKeyRelatedField(queryset=OnHoldPay.objects.filter(is_active=True),required=True)
         number_of_negative_product = serializers.IntegerField(required=True,min_value=0,max_value=3,help_text="Number of negative products must be between 0 and 3.")
-        rank_appearance = serializers.IntegerField(required=True,min_value=0,max_value=3)
+        rank_appearance = serializers.IntegerField(required=True,min_value=0)
         
         class Meta:
             model = Game
