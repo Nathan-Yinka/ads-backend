@@ -5,7 +5,7 @@ from rest_framework.exceptions import AuthenticationFailed
 from django.contrib.auth import get_user_model
 
 from .models import Invitation,InvitationCode
-from wallet.models import Wallet
+from wallet.models import Wallet,OnHoldPay
 from wallet.serializers import WalletSerializer
 from administration.serializers import SettingsSerializer
 from shared.helpers import get_settings
@@ -17,6 +17,7 @@ from django.db.models.functions import ExtractMonth, ExtractYear
 from django.db.models import Count
 from finances.models import PaymentMethod
 from finances.serializers import PaymentMethodSerializer
+import random
 
 
 
@@ -263,6 +264,7 @@ class DashboardSerializer(serializers.Serializer):
         count = Game.objects.filter(
             updated_at__gte=start_of_today,  # From start of today
             updated_at__lt=end_of_today,    # Until the end of today
+            is_active=True
         ).filter(
             Q(played=True) | Q(pending=True)  # Either played or pending
         ).count()
@@ -322,6 +324,7 @@ class DashboardSerializer(serializers.Serializer):
         # Query for submissions grouped by month
         submissions = Game.objects.filter(
             updated_at__year=current_year,  # Filter by current year
+            is_active=True
         ).filter(
             Q(played=True) | Q(pending=True)  # Filter for played or pending
         ).annotate(
@@ -403,10 +406,10 @@ class UserProfileListSerializer(serializers.ModelSerializer):
             return None
 
     def get_total_negative_product_submitted(self,obj):
-        return Game.objects.filter(user=obj,special_product=True,played=True).count()
+        return Game.objects.filter(user=obj,special_product=True,played=True,is_active=True).count()
 
     def get_total_product_submitted(Self,obj):
-        return Game.objects.filter(user=obj,played=True).count()
+        return Game.objects.filter(user=obj,played=True,is_active=True).count()
 
 class AdminUserUpdateSerializer:
 
@@ -522,6 +525,11 @@ class AdminUserUpdateSerializer:
             model = User
             fields = "__all__"
             ref_name = "Admin User Retrieve"
+            extra_kwargs = {
+            'password': {'write_only': True},
+            'transactional_password': {'write_only': True}
+        }
+            
 
         def get_use_payment_method(self,obj):
             try:
@@ -581,3 +589,4 @@ class AdminUserUpdateSerializer:
             user.is_active = not user.is_active
             user.save()
             return user
+

@@ -2,6 +2,8 @@ import random
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.timezone import now, timedelta
+# from wallet.models import OnHoldPay
+from django.core.validators import MinValueValidator
 
 User = get_user_model()
 
@@ -34,7 +36,6 @@ class Product(models.Model):
         return self.name
 
 
-
 class Game(models.Model):
     products = models.ManyToManyField('Product', related_name="games")
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="games")  
@@ -49,9 +50,18 @@ class Game(models.Model):
     game_number = models.IntegerField(null=True,blank=True)
     pending = models.BooleanField(default=False)
     rating_no = models.CharField(max_length=11, unique=True, blank=True)  # Unique 11-digit number
+    is_active = models.BooleanField(default=True)
+    on_hold = models.ForeignKey(
+        "wallet.OnHoldPay", 
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="negative_games",
+        help_text="Reference to the on-hold payment associated with this game."
+        )
     
     class Meta:
-        ordering = ['-created_at']  # Default ordering by creation date (most recent first)
+        ordering = ['-created_at']
         
     def save(self, *args, **kwargs):
         """
@@ -76,6 +86,7 @@ class Game(models.Model):
         return cls.objects.filter(
             user=user,
             played=True,  # Ensure we only count played games
+            is_active=True,
             created_at__gte=start_of_day,
             created_at__lt=end_of_day
         ).count()
@@ -85,19 +96,38 @@ class Game(models.Model):
         '''
         check if the user has pending game play 
         '''
-        return cls.objects.filter(user=user, played=False,pending=True).exists()
+        return cls.objects.filter(user=user, played=False,pending=True,is_active=True).exists()
 
     def __str__(self):
         return f"Game Review: {self.products.name if self.products else 'product'} by {self.user.username}"
 
-# class PendingGame(models.Model):
-#     user = models.ForeignKey(User, on_delete=models.CASCADE)
-#     game = models.ForeignKey(Game,on_delete=models.CASCADE)
-#     is_active = models.BooleanField(default=True)
 
-#     def confirm_game(self):
-#         if self.user.wallet.on_hold == 0:
-#             self.game.played = True
-#             self.game.save()
-#             self.is_active = False
-#             self.save()
+# class NegativeUser(models.Model):
+#     user = models.OneToOneField(
+#         User, 
+#         on_delete=models.CASCADE, 
+#         related_name="negative_user",
+#         help_text="The user associated with negative reviews or activity."
+#     )
+#     on_hold = models.ForeignKey(
+#         "wallet.OnHoldPay", 
+#         on_delete=models.CASCADE, 
+#         related_name="negative_users",
+#         help_text="Reference to the on-hold payment associated with this user."
+#     )
+#     number_of_negative_product = models.IntegerField(
+#         validators=[
+#             MinValueValidator(0)
+#         ],
+#         help_text="Number of negative products associated with the user."
+#     )
+#     rank_appearance = models.IntegerField(
+#         validators=[
+#             MinValueValidator(0)
+#         ],
+#         help_text="The ranks number for the product to show."
+#     )
+
+#     def __str__(self):
+#         return f"NegativeUser: {self.user.username} - Negative Products: {self.number_of_negative_product}"
+

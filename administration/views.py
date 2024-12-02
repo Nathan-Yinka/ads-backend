@@ -21,6 +21,11 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.viewsets import ReadOnlyModelViewSet
 from django.contrib.auth import get_user_model
 from users.serializers import UserProfileListSerializer,AdminUserUpdateSerializer
+from wallet.serializers import OnHoldPaySerializer
+from wallet.models import OnHoldPay
+from game.models import Game
+from game.serializers import AdminNegativeUserSerializer
+
 
 User = get_user_model()
 
@@ -208,7 +213,7 @@ class EventViewSet(StandardResponseMixin,ModelViewSet):
     permission_classes = [IsSiteAdmin]
 
 
-class UserReadViewSet(StandardResponseMixin,ReadOnlyModelViewSet):
+class AdminUserManagementViewSet(StandardResponseMixin,ReadOnlyModelViewSet):
     serializer_class = UserProfileListSerializer
     permission_classes = [IsSiteAdmin]
 
@@ -355,3 +360,73 @@ class UserReadViewSet(StandardResponseMixin,ReadOnlyModelViewSet):
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
         return self.handle_action_response(user, "User has be Actived back" if user.is_active else "User has been deactivated successfully")
+    
+class OnHoldViewSet(StandardResponseMixin,ModelViewSet):
+    queryset = OnHoldPay.objects.all()
+    serializer_class = OnHoldPaySerializer
+    permission_classes = [IsSiteAdmin]
+
+
+class AdminNegativeUserManagementViewSet(StandardResponseMixin,ModelViewSet):
+    serializer_class = AdminNegativeUserSerializer.List
+    permission_classes = [IsSiteAdmin]
+    
+    def get_queryset(self):
+        return Game.objects.filter(is_active=True,played=False,special_product=True)
+
+    def get_serializer_class(self):
+        if self.action in ['retrieve', 'list']:
+            return AdminNegativeUserSerializer.List
+        return AdminNegativeUserSerializer.Create
+    
+    def handle_action_response(self, data, message="Action completed successfully.",override_serializer=None):
+        """
+        Centralized function to handle responses using UserProfile serializer.
+        Returns a standardized response.
+        """
+        if not override_serializer:
+            serializer = AdminNegativeUserSerializer.List(instance=data)
+        else:
+            serializer = override_serializer(instance=data)
+        return self.standard_response(
+                success=True,
+                message=message,
+                data=serializer.data,
+                status_code=status.HTTP_200_OK,
+            )
+
+    def create(self,request):
+        """
+        Handles the creation of a negative game.
+        """
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        game = serializer.save()
+        return self.handle_action_response(game, "User Negative Submission Created Succussfully")
+    
+
+    def update(self, request, *args, **kwargs):
+        """
+        Handles updates for a negative game instance.
+        """
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        updated_game = serializer.save()
+        return self.handle_action_response(updated_game, "User Negative Submission Created Succussfully")
+
+    def destroy(self, request, *args, **kwargs):
+        """
+        delete the nagative game
+        """
+        instance = self.get_object()
+        instance.delete()
+        return self.standard_response(
+                success=True,
+                message="Negative Submission for user has been deleted Successfully",
+                data=None,
+                status_code=status.HTTP_204_NO_CONTENT,
+            )
+    
+

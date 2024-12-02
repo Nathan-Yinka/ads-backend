@@ -160,3 +160,21 @@ class Wallet(models.Model):
 
 
         
+class OnHoldPay(models.Model):
+    min_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="min amount for the on hold range"
+    )
+    max_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="max amount for the on hold range"
+    )
+    is_active = models.BooleanField(default=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Range from {self.min_amount} - {self.max_amount}"

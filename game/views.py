@@ -170,7 +170,7 @@ class GameViewSet(StandardResponseMixin, ViewSet):
 
         # Filter games for the user with `played=True` OR `pending=True`
         games = Game.objects.filter(
-            user=user
+            user=user,is_active=True
         ).filter(
             Q(played=True) | Q(pending=True)
         ).order_by('-updated_at', '-created_at')

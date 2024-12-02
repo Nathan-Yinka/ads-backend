@@ -1,4 +1,4 @@
-from .models import Wallet
+from .models import Wallet,OnHoldPay
 from rest_framework import serializers
 from packs.serializers import PackProfileSerializer,PackSerializer
 
@@ -19,3 +19,8 @@ class WalletSerializer:
         class Meta:
             model = Wallet
             fields = "__all__"
+
+class OnHoldPaySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OnHoldPay
+        fields = ['id','min_amount','max_amount','is_active']
