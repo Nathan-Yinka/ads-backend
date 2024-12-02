@@ -277,7 +277,7 @@ class DashboardSerializer(serializers.Serializer):
         end_of_today = start_of_today + timedelta(days=1)
 
         # Filter users whose last_connection is within today's range
-        return User.objects.users.filter(
+        return User.objects.users().filter(
             last_connection__gte=start_of_today,
             last_connection__lt=end_of_today,
         ).count()
@@ -389,7 +389,7 @@ class UserProfileListSerializer(serializers.ModelSerializer):
     total_negative_product_submitted = serializers.SerializerMethodField(read_only=True)
     class Meta:
         model = User
-        fields = ['id','username','email','phone_number','first_name','last_name','gender','referral_code','profile_picture','last_connection','is_active','date_joined','wallet','total_play','total_available_play','total_product_submitted','total_negative_product_submitted']
+        fields = ['id','username','email','phone_number','first_name','last_name','gender','referral_code','profile_picture','last_connection','is_active','date_joined','wallet','total_play','total_available_play','total_product_submitted','total_negative_product_submitted','is_min_balance_for_submission_removed','is_reg_balance_add']
         read_only_fields = ['date_joined','referral_code',]
 
     def get_total_play(self,obj):
@@ -559,7 +559,7 @@ class AdminUserUpdateSerializer:
 
         def save(self):
             """
-            Get all the user datails
+            Toggle User Min Balance Settings
             """
             user = self.validated_data['user']
             if user.is_min_balance_for_submission_removed:
@@ -570,3 +570,14 @@ class AdminUserUpdateSerializer:
             user.save()
             return user
 
+    class ToggleUserActive(serializers.Serializer):
+        user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all(),required=True)
+
+        def save(self):
+            """
+            Toggle User is_active status
+            """
+            user = self.validated_data['user']
+            user.is_active = not user.is_active
+            user.save()
+            return user

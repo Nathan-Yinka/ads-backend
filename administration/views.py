@@ -1,6 +1,9 @@
 from rest_framework.viewsets import GenericViewSet,ViewSet,ModelViewSet
 from rest_framework.exceptions import NotFound
 from drf_yasg.utils import swagger_auto_schema
+from django.db.models import Count, Q, F ,OrderBy, Value
+from django.db.models.functions import Coalesce
+from rest_framework.filters import OrderingFilter,SearchFilter
 from drf_yasg import openapi
 from rest_framework.parsers import MultiPartParser, FormParser
 from rest_framework.decorators import action
@@ -206,9 +209,23 @@ class EventViewSet(StandardResponseMixin,ModelViewSet):
 
 
 class UserReadViewSet(StandardResponseMixin,ReadOnlyModelViewSet):
-    queryset = User.objects.users()
     serializer_class = UserProfileListSerializer
     permission_classes = [IsSiteAdmin]
+
+    def get_queryset(self):
+        """
+        Annotate the queryset with complex fields and return it.
+        """
+        return User.objects.users().annotate(
+            total_games_played=Count('games', filter=Q(games__played=True)),
+            total_negative_product=Count('games', filter=Q(games__played=True)& Q(games__special_product=True)),
+            wallet_commission=F('wallet__commission')
+        )
+
+    filter_backends = [OrderingFilter, SearchFilter]
+    search_fields = ['username', 'email', 'phone_number','first_name','last_name']
+    ordering_fields = ['wallet__commission', 'total_games_played', 'total_negative_product',] 
+    ordering = ['-id'] 
 
     def get_serializer_class(self):
         """
@@ -230,8 +247,8 @@ class UserReadViewSet(StandardResponseMixin,ReadOnlyModelViewSet):
             return AdminUserUpdateSerializer.ToggleUserMinBalanceForSubmission
         elif self.action == 'get_user_info':
             return AdminUserUpdateSerializer.UserProfile
-        # elif self.action == 'retrieve_user_profile_payment_method':
-        #     return AdminUserUpdateSerializer.UserProfileRetrieve
+        elif self.action == 'toggle_user_active':
+            return AdminUserUpdateSerializer.ToggleUserActive
         return super().get_serializer_class()
     
     def handle_action_response(self, data, message="Action completed successfully.",override_serializer=None):
@@ -329,3 +346,12 @@ class UserReadViewSet(StandardResponseMixin,ReadOnlyModelViewSet):
         user = serializer.save()
         return self.handle_action_response(user, "User Info Retrieved Succussfully",AdminUserUpdateSerializer.UserProfileRetrieve)
 
+    @action(detail=False, methods=['post'], url_path='toggle_user_active')
+    def toggle_user_active(self,request):
+        """
+        Toggle user is active status
+        """
+        serializer =  self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return self.handle_action_response(user, "User has be Actived back" if user.is_active else "User has been deactivated successfully")
