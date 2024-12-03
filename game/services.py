@@ -25,7 +25,7 @@ class PlayGameService:
         if not self.user.is_min_balance_for_submission_removed:
             min_balance = getattr(self.settings, 'minimum_balance_for_submissions', 100)
             if self.wallet.balance < min_balance:
-                return False, f"You need a minimum of {min_balance} USD balnce to make a submission."
+                return False, f"You need a minimum of {min_balance} USD balance to make a submission."
         if Game.count_games_played_today(self.user) >= self.total_number_can_play:
             return False, "You have reached the maximum number of submissions you can make today, upgrade you package"
         return True, ""
@@ -70,7 +70,7 @@ class PlayGameService:
             self.wallet.credit(amount + commission)
             self.wallet.credit_commission(commission)
         else:
-            if self.wallet.balance < amount:
+            if self.wallet.balance < amount and game.special_product:
                 game.pending = True
                 game.save()
                 self.wallet.on_hold = self.wallet.balance - amount
